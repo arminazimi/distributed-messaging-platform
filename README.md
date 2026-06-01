@@ -1,4 +1,4 @@
-# SMS Gateway – Developer Guide
+# distributed messaging platform – Developer Guide
 
 ## Overview
 - Full-stack observability: metrics for HTTP/DB/RabbitMQ, structured JSON logs, OpenTelemetry tracing.
