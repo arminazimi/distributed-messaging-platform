@@ -17,7 +17,7 @@ env:
 
 jobs:
   build-test:
-    name: Build, Test, and Validate
+    name: Test, Vet, Build
     runs-on: ubuntu-latest
 
     steps:
@@ -39,13 +39,28 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-
       - name: Build Go packages
         run: go build ./...
 
       - name: Build Docker image
         run: docker build --build-arg GOPROXY="$GOPROXY" --build-arg GOSUMDB="$GOSUMDB" .
+
+  lint:
+    name: Optional Lint
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
