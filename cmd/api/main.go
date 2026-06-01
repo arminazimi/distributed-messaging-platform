@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
+	"gateway/app"
+	"gateway/config"
+	"gateway/internal/balance"
+	"gateway/internal/sms"
+	"gateway/pkg/metrics"
 	"os/signal"
-	"sms-gateway/app"
-	"sms-gateway/config"
-	"sms-gateway/internal/balance"
-	"sms-gateway/internal/sms"
-	"sms-gateway/pkg/metrics"
 	"syscall"
 	"time"
 
-	_ "sms-gateway/docs"
+	_ "gateway/docs"
 
 	echSwagger "github.com/swaggo/echo-swagger"
 )

@@ -5,12 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gateway/testutil"
 	"net/http"
 	"net/http/httptest"
-	"sms-gateway/testutil"
 	"testing"
 
-	"sms-gateway/app"
+	"gateway/app"
 )
 
 // handlerCtx now comes from main_test.go via testutil.SetupAppTest

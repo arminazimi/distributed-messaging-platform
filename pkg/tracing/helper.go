@@ -10,7 +10,7 @@ import (
 )
 
 func Tracer() trace.Tracer {
-	return otel.Tracer("sms-gateway")
+	return otel.Tracer("gateway")
 }
 
 func Attr(key, val string) attribute.KeyValue {

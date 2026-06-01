@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"sms-gateway/pkg/metrics"
-	"sms-gateway/pkg/tracing"
+	"gateway/pkg/metrics"
+	"gateway/pkg/tracing"
 
 	"github.com/google/uuid"
 	"github.com/rabbitmq/amqp091-go"

@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sms-gateway/app"
-	"sms-gateway/config"
-	"sms-gateway/internal/model"
-	"sms-gateway/pkg/metrics"
-	amqp "sms-gateway/pkg/queue"
-	"sms-gateway/pkg/tracing"
+	"gateway/app"
+	"gateway/config"
+	"gateway/internal/model"
+	"gateway/pkg/metrics"
+	amqp "gateway/pkg/queue"
+	"gateway/pkg/tracing"
 
 	"github.com/rabbitmq/amqp091-go"
 )

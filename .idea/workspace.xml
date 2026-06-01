@@ -5,12 +5,34 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ec1089bf-d736-41cd-bde2-592108a60ef4" name="Changes" comment="add balance retrieval and transaction history endpoints">
+      <change beforePath="$PROJECT_DIR$/.env" beforeDir="false" afterPath="$PROJECT_DIR$/.env" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.postman/config.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/Makefile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/app.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/app.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/api/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/api/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/balance/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/balance/handler.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/balance/handler_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/balance/handler_test.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/balance/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/balance/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/balance/service_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/balance/service_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/operator/operatorA/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/operator/operatorA/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/operator/operatorB/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/operator/operatorB/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/operator/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/operator/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/sms/consumer.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/sms/consumer.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/sms/handler.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/sms/handler.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/sms/handler_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/sms/handler_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/sms/outbox_publisher.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/sms/outbox_publisher.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/sms/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/sms/service.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/sms/service_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/sms/service_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/queue/rabbitmq.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/queue/rabbitmq.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pkg/tracing/helper.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/tracing/helper.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/testutil/app_test_setup.go" beforeDir="false" afterPath="$PROJECT_DIR$/testutil/app_test_setup.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,28 +62,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;DefaultGoTemplateProperty&quot;: &quot;Go File&quot;,
-    &quot;Docker.docker-compose.yml.mysql: Compose Deployment.executor&quot;: &quot;Run&quot;,
-    &quot;Docker.docker-compose.yml: Compose Deployment.executor&quot;: &quot;Run&quot;,
-    &quot;Go Build.go build sms-gateway/cmd/api.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginOnboardingV2&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.GoLinterPluginStorageMigration&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.go.modules.go.list.on.any.changes.was.set&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;go.sdk.automatically.set&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;/Users/armin/Desktop/project/sms-gateway/pkg&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;go&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultGoTemplateProperty": "Go File",
+    "Docker.docker-compose.yml.mysql: Compose Deployment.executor": "Run",
+    "Docker.docker-compose.yml: Compose Deployment.executor": "Run",
+    "Go Build.go build sms-gateway/cmd/api.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.GoLinterPluginOnboardingV2": "true",
+    "RunOnceActivity.GoLinterPluginStorageMigration": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.go.analysis.ui.options.defaults": "true",
+    "RunOnceActivity.go.formatter.settings.were.checked": "true",
+    "RunOnceActivity.go.modules.go.list.on.any.changes.was.set": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "go.sdk.automatically.set": "true",
+    "last_opened_file_path": "/Users/armin/Desktop/project/distributed-messaging-platform",
+    "nodejs_package_manager_path": "npm",
+    "run.configurations.included.in.services": "true",
+    "settings.editor.selected.configurable": "go"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/pkg" />
@@ -74,7 +99,32 @@
       <recent name="$PROJECT_DIR$/docs" />
     </key>
   </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="GoApplicationRunConfiguration" />
+      </set>
+    </option>
+  </component>
   <component name="RunManager" selected="Go Build.go build sms-gateway/cmd/api">
+    <configuration name="go build api/" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+      <module name="distributed-messaging-platform" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="gateway/cmd/api" />
+      <directory value="$PROJECT_DIR$" />
+      <auto_managed_config_id value="$PROJECT_DIR$/cmd/api" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go build loadtest/" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+      <module name="distributed-messaging-platform" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="PACKAGE" />
+      <package value="gateway/cmd/loadtest" />
+      <directory value="$PROJECT_DIR$" />
+      <auto_managed_config_id value="$PROJECT_DIR$/cmd/loadtest" />
+      <method v="2" />
+    </configuration>
     <configuration name="go build main.go" type="GoApplicationRunConfiguration" factoryName="Go Application" singleton="false" nameIsGenerated="true">
       <working_directory value="$PROJECT_DIR$" />
       <kind value="PACKAGE" />
@@ -122,6 +172,8 @@
     <list>
       <item itemvalue="Docker.docker-compose.yml.mysql: Compose Deployment" />
       <item itemvalue="Docker.docker-compose.yml: Compose Deployment" />
+      <item itemvalue="Go Build.go build api/" />
+      <item itemvalue="Go Build.go build loadtest/" />
       <item itemvalue="Go Build.go build main.go" />
       <item itemvalue="Go Build.go build sms-gateway/cmd/api" />
     </list>
@@ -137,8 +189,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-gosdk-72a9cf600ed8-448e06e64ec5-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-253.28294.337" />
-        <option value="bundled-js-predefined-d6986cc7102b-c7e53b3be11b-JavaScript-GO-253.28294.337" />
+        <option value="bundled-gosdk-72a9cf600ed8-3dd3895e5e08-org.jetbrains.plugins.go.sharedIndexes.bundled-GO-261.24374.154" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-GO-261.24374.154" />
       </set>
     </attachedChunks>
   </component>
@@ -164,6 +216,31 @@
     <MESSAGE value="update workspace configuration and improve handler imports" />
     <MESSAGE value="add balance retrieval and transaction history endpoints" />
     <option name="LAST_COMMIT_MESSAGE" value="add balance retrieval and transaction history endpoints" />
+  </component>
+  <component name="VgoModernizerVersionTracker">
+    <upgrades>
+      <map>
+        <entry key="$PROJECT_DIR$/go.mod">
+          <value>
+            <VersionUpgradeInfo>
+              <version>1.26</version>
+              <timestamp>1780286762403</timestamp>
+            </VersionUpgradeInfo>
+          </value>
+        </entry>
+      </map>
+    </upgrades>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/app/app.go</url>
+          <line>2</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>

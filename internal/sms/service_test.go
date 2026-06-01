@@ -1,10 +1,10 @@
 package sms
 
 import (
-	"sms-gateway/testutil"
+	"gateway/testutil"
 	"testing"
 
-	"sms-gateway/internal/model"
+	"gateway/internal/model"
 )
 
 func TestUpdateSMS_InsertAndHistory(t *testing.T) {

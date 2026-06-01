@@ -40,7 +40,7 @@ services:
 
   app:
     build: .
-    image: sms-gateway:latest
+    image: gateway:latest
     container_name: sms_gateway_app
     depends_on:
       mysql:

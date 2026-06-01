@@ -2,8 +2,8 @@ package balance
 
 import (
 	"encoding/json"
+	"gateway/app"
 	"net/http"
-	"sms-gateway/app"
 
 	"github.com/labstack/echo/v4"
 )

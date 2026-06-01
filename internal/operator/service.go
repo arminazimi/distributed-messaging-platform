@@ -6,12 +6,12 @@ import (
 	"log/slog"
 	"time"
 
-	"sms-gateway/internal/model"
-	operatorA "sms-gateway/internal/operator/operatorA"
-	operatorB "sms-gateway/internal/operator/operatorB"
-	"sms-gateway/pkg/circuitbreaker"
-	"sms-gateway/pkg/metrics"
-	"sms-gateway/pkg/tracing"
+	"gateway/internal/model"
+	operatorA "gateway/internal/operator/operatorA"
+	operatorB "gateway/internal/operator/operatorB"
+	"gateway/pkg/circuitbreaker"
+	"gateway/pkg/metrics"
+	"gateway/pkg/tracing"
 )
 
 type Operator interface {

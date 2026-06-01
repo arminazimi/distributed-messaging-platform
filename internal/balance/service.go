@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sms-gateway/app"
-	"sms-gateway/internal/model"
-	"sms-gateway/pkg/metrics"
+	"gateway/app"
+	"gateway/internal/model"
+	"gateway/pkg/metrics"
 	"time"
 
 	"github.com/go-sql-driver/mysql"

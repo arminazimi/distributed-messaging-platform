@@ -2,13 +2,13 @@ package app
 
 import (
 	"context"
+	"gateway/config"
+	"gateway/pkg/db"
+	"gateway/pkg/metrics"
+	amqp "gateway/pkg/queue"
+	"gateway/pkg/tracing"
 	"log/slog"
 	"os"
-	"sms-gateway/config"
-	"sms-gateway/pkg/db"
-	"sms-gateway/pkg/metrics"
-	amqp "sms-gateway/pkg/queue"
-	"sms-gateway/pkg/tracing"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"

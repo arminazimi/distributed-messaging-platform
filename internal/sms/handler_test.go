@@ -3,8 +3,8 @@ package sms
 import (
 	"bytes"
 	"context"
+	testutil2 "gateway/testutil"
 	"log/slog"
-	testutil2 "sms-gateway/testutil"
 
 	"fmt"
 	"net/http"
@@ -12,10 +12,10 @@ import (
 	"os"
 	"testing"
 
-	"sms-gateway/app"
-	"sms-gateway/config"
-	"sms-gateway/internal/model"
-	amqp "sms-gateway/pkg/queue"
+	"gateway/app"
+	"gateway/config"
+	"gateway/internal/model"
+	amqp "gateway/pkg/queue"
 
 	"github.com/labstack/echo/v4"
 )

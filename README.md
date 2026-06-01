@@ -241,6 +241,7 @@ sequenceDiagram
 - Docker (app + deps): `make docker`
 - Load test seed (fast DB seed): `make seed`
 - Load test traffic: `make loadtest`
+- Benchmark traffic: `make benchmark`
 
 Or manually:
 ```bash
@@ -262,10 +263,41 @@ DB connection pooling can be tuned via env:
 - `DB_CONN_MAX_LIFETIME_SEC` (default 300)
 
 
-### Load test tips
-- Seed once: `make seed`
-- Then run traffic: `make loadtest`
-- If you want slow, API-only seeding: `go run ./cmd/loadtest -seed-only -seed-method http ...`
+## Performance Benchmark
+This project includes a lightweight benchmark driver in `cmd/loadtest` for measuring the `/sms/send` ingestion path under concurrent HTTP traffic. The benchmark exercises the API layer, balance validation, SMS request persistence, and transactional outbox enqueue path while the service runs with MySQL and RabbitMQ in Docker Compose.
+
+Start the stack:
+```bash
+docker compose up --build
+```
+
+In another terminal, seed test balances for the benchmark users:
+```bash
+make seed
+```
+
+The default seed command inserts balance directly into MySQL for users `1..5000`, which is faster and more repeatable than calling the balance API thousands of times. If you want to seed through the public HTTP API instead, use:
+```bash
+go run ./cmd/loadtest -seed-only -seed-method http -base-url http://localhost:8080 -seed-balance 100000 -users 5000
+```
+
+Run the benchmark:
+```bash
+make benchmark
+```
+
+The default benchmark sends traffic to `POST /sms/send` at `1000` requested RPS for `30s`, with `200` concurrent workers, `5000` rotating users, one recipient per request, and a `20%` express-message ratio. You can override these values without editing the Makefile:
+```bash
+BENCH_RPS=500 BENCH_CONCURRENCY=100 BENCH_DURATION=60s BENCH_USERS=5000 make benchmark
+```
+
+The benchmark measures API ingestion throughput, successful request processing, client-side errors, and latency percentiles for accepted SMS requests. These results help evaluate whether the service can sustain high write concurrency while preserving low tail latency across the database-backed outbox workflow.
+
+| Target RPS | Achieved RPS | Concurrency | Duration | Total Requests | Successful Requests | Non-2xx Responses | HTTP Errors | Success Rate | p50 Latency | p90 Latency | p95 Latency | p99 Latency | Max Latency |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000 | 995.3 | 200 | 30s | 29,860 | 29,856 | 0 | 4 | 99.987% | 4.33 ms | 8.21 ms | 11.26 ms | 26.02 ms | 84.97 ms |
+
+The benchmark demonstrates that the platform can sustain approximately 1,000 requests per second with 99.98% successful request processing and sub-30ms p99 latency in a local Docker Compose environment.
 
 ## Observability
 - **Logs**: Structured JSON via slog to stdout.

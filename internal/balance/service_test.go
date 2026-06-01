@@ -1,11 +1,11 @@
 package balance
 
 import (
-	"sms-gateway/testutil"
+	"gateway/testutil"
 	"testing"
 
-	"sms-gateway/app"
-	"sms-gateway/internal/model"
+	"gateway/app"
+	"gateway/internal/model"
 )
 
 func TestUserHasBalance(t *testing.T) {

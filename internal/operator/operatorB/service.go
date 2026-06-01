@@ -2,8 +2,8 @@ package operatorB
 
 import (
 	"context"
-	"sms-gateway/app"
-	"sms-gateway/internal/model"
+	"gateway/app"
+	"gateway/internal/model"
 )
 
 type OB struct{}

@@ -2,8 +2,8 @@ package operatorA
 
 import (
 	"context"
-	"sms-gateway/app"
-	"sms-gateway/internal/model"
+	"gateway/app"
+	"gateway/internal/model"
 )
 
 type OA struct{}

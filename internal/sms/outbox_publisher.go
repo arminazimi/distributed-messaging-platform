@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"sms-gateway/app"
-	"sms-gateway/internal/balance"
-	"sms-gateway/internal/model"
-	amqp "sms-gateway/pkg/queue"
+	"gateway/app"
+	"gateway/internal/balance"
+	"gateway/internal/model"
+	amqp "gateway/pkg/queue"
 
 	"github.com/jmoiron/sqlx"
 )

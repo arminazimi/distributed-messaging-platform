@@ -1,7 +1,7 @@
 package config
 
 import (
-	"sms-gateway/pkg/env"
+	"gateway/pkg/env"
 	"strconv"
 )
 
@@ -26,7 +26,7 @@ var (
 )
 
 func Init() {
-	AppName = env.Default("APP_NAME", "sms-gateway")
+	AppName = env.Default("APP_NAME", "gateway")
 	AppListenAddr = env.RequiredNotEmpty("LISTEN_ADDR")
 	DBUsername = env.RequiredNotEmpty("DB_USER_NAME")
 	DBPassword = env.RequiredNotEmpty("DB_PASSWORD")
