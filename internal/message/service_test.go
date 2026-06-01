@@ -1,4 +1,4 @@
-package sms
+package message
 
 import (
 	"gateway/testutil"
@@ -7,9 +7,9 @@ import (
 	"gateway/internal/model"
 )
 
-func TestUpdateSMS_InsertAndHistory(t *testing.T) {
+func TestUpdateMessage_InsertAndHistory(t *testing.T) {
 	ctx := testutil.EnsureSetup(t)
-	s := model.SMS{CustomerID: 1, Recipients: []string{"+1", "+2"}, Type: model.NORMAL, SmsIdentifier: "id-1"}
+	s := model.Message{CustomerID: 1, Recipients: []string{"+1", "+2"}, Type: model.NORMAL, MessageIdentifier: "id-1"}
 
 	if err := InsertPending(ctx, s); err != nil {
 		t.Fatalf("insert pending err: %v", err)
@@ -23,29 +23,29 @@ func TestUpdateSMS_InsertAndHistory(t *testing.T) {
 		t.Fatalf("expected 2 rows, got %d", len(history))
 	}
 	for _, h := range history {
-		if h.SmsIdentifier != "id-1" || h.Status != Pending {
+		if h.MessageIdentifier != "id-1" || h.Status != Pending {
 			t.Fatalf("unexpected history %+v", h)
 		}
 	}
 }
 
-func TestUpdateSMS_NoRecipients(t *testing.T) {
+func TestUpdateMessage_NoRecipients(t *testing.T) {
 	ctx := testutil.EnsureSetup(t)
-	s := model.SMS{CustomerID: 1, Recipients: nil, Type: model.NORMAL}
+	s := model.Message{CustomerID: 1, Recipients: nil, Type: model.NORMAL}
 	if err := InsertPending(ctx, s); err == nil {
 		t.Fatalf("expected error for no recipients")
 	}
 }
 
-func TestSendSms_Success(t *testing.T) {
+func TestSendMessage_Success(t *testing.T) {
 	ctx := testutil.EnsureSetup(t)
 
-	s := model.SMS{CustomerID: 1, Recipients: []string{"+1", "+2"}, Type: model.NORMAL, SmsIdentifier: "succ-1"}
+	s := model.Message{CustomerID: 1, Recipients: []string{"+1", "+2"}, Type: model.NORMAL, MessageIdentifier: "succ-1"}
 	if err := InsertPending(ctx, s); err != nil {
 		t.Fatalf("insert pending err: %v", err)
 	}
-	if err := sendSms(ctx, s); err != nil {
-		t.Fatalf("sendSms err: %v", err)
+	if err := sendMessage(ctx, s); err != nil {
+		t.Fatalf("sendMessage err: %v", err)
 	}
 
 	// After processing, final state should be DONE.
@@ -60,11 +60,11 @@ func TestSendSms_Success(t *testing.T) {
 	}
 }
 
-func TestSendSms_NoRecipients(t *testing.T) {
+func TestSendMessage_NoRecipients(t *testing.T) {
 	ctx := testutil.EnsureSetup(t)
 
-	s := model.SMS{CustomerID: 3, Recipients: nil, Type: model.NORMAL, SmsIdentifier: "no-recips"}
-	if err := sendSms(ctx, s); err == nil {
+	s := model.Message{CustomerID: 3, Recipients: nil, Type: model.NORMAL, MessageIdentifier: "no-recips"}
+	if err := sendMessage(ctx, s); err == nil {
 		t.Fatalf("expected error for no recipients")
 	}
 }

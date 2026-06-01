@@ -6,18 +6,18 @@ import (
 )
 
 var (
-	AppName       string
-	AppBaseURL    string
-	AppListenAddr string
-	DBUsername    string
-	DBPassword    string
-	DBHost        string
-	DBPort        int
-	DBName        string
-	RabbitmqUri   string
-	SmsExchange   string
-	ExpressQueue  string
-	NormalQueue   string
+	AppName         string
+	AppBaseURL      string
+	AppListenAddr   string
+	DBUsername      string
+	DBPassword      string
+	DBHost          string
+	DBPort          int
+	DBName          string
+	RabbitmqUri     string
+	MessageExchange string
+	ExpressQueue    string
+	NormalQueue     string
 
 	// Capacity knobs
 	DBMaxOpenConns       int
@@ -38,7 +38,7 @@ func Init() {
 	DBPort = port
 	DBName = env.RequiredNotEmpty("DB_NAME")
 	RabbitmqUri = env.RequiredNotEmpty("RABBIT_URI")
-	SmsExchange = env.RequiredNotEmpty("RABBIT_SMS_EXCHANGE")
+	MessageExchange = env.RequiredNotEmpty("RABBIT_MESSAGE_EXCHANGE")
 	ExpressQueue = env.RequiredNotEmpty("EXPRESS_QUEUE")
 	NormalQueue = env.RequiredNotEmpty("NORMAL_QUEUE")
 

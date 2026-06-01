@@ -71,7 +71,7 @@ func TestRefund(t *testing.T) {
 	if err != nil {
 		t.Fatalf("seed balance: %v", err)
 	}
-	if err := Refund(ctx, model.SMS{CustomerID: 501, TransactionID: "tx123"}); err != nil {
+	if err := Refund(ctx, model.Message{CustomerID: 501, TransactionID: "tx123"}); err != nil {
 		t.Fatalf("refund: %v", err)
 	}
 	bal, _ := GetUserBalance(ctx, "501")

@@ -1,4 +1,4 @@
-package sms
+package message
 
 import (
 	"bytes"
@@ -53,7 +53,7 @@ func startApp(t *testing.T) func() {
 func TestSendHandler_InvalidJSON(t *testing.T) {
 	initTestLogger()
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/sms/send", bytes.NewBufferString("{bad json"))
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString("{bad json"))
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -68,7 +68,7 @@ func TestSendHandler_ZeroRecipients(t *testing.T) {
 	initTestLogger()
 	e := echo.New()
 	body := `{"customer_id":1,"recipients":[],"type":"normal"}`
-	req := httptest.NewRequest(http.MethodPost, "/sms/send", bytes.NewBufferString(body))
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -84,7 +84,7 @@ func TestSendHandler_ZeroRecipients(t *testing.T) {
 func TestHistoryHandler_MissingUserID(t *testing.T) {
 	initTestLogger()
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/sms/history", nil)
+	req := httptest.NewRequest(http.MethodGet, "/messages/history", nil)
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -107,7 +107,7 @@ func TestSendHandler_BalanceError(t *testing.T) {
 
 	e := echo.New()
 	body := `{"customer_id":1,"recipients":["+1"],"type":"normal"}`
-	req := httptest.NewRequest(http.MethodPost, "/sms/send", bytes.NewBufferString(body))
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -132,7 +132,7 @@ func TestSendHandler_NotEnoughBalance(t *testing.T) {
 
 	e := echo.New()
 	body := `{"customer_id":1,"recipients":["+1","+2"],"type":"normal"}`
-	req := httptest.NewRequest(http.MethodPost, "/sms/send", bytes.NewBufferString(body))
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -158,7 +158,7 @@ func TestSendHandler_DeductError(t *testing.T) {
 
 	e := echo.New()
 	body := `{"customer_id":1,"recipients":["+1"],"type":"normal"}`
-	req := httptest.NewRequest(http.MethodPost, "/sms/send", bytes.NewBufferString(body))
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -186,7 +186,7 @@ func TestSendHandler_PublishError(t *testing.T) {
 
 	e := echo.New()
 	body := `{"customer_id":1,"recipients":["+1"],"type":"normal"}`
-	req := httptest.NewRequest(http.MethodPost, "/sms/send", bytes.NewBufferString(body))
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -210,7 +210,7 @@ func TestSendHandler_Success(t *testing.T) {
 
 	e := echo.New()
 	body := `{"customer_id":1,"recipients":["+1"],"type":"normal"}`
-	req := httptest.NewRequest(http.MethodPost, "/sms/send", bytes.NewBufferString(body))
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -230,7 +230,7 @@ func TestHistoryHandler_Error(t *testing.T) {
 	_ = app.DB.Close()
 
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/sms/history?user_id=1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/messages/history?user_id=1", nil)
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 
@@ -245,14 +245,14 @@ func TestHistoryHandler_Success(t *testing.T) {
 	cleanup := startApp(t)
 	t.Cleanup(cleanup)
 
-	_, _ = app.DB.ExecContext(context.Background(), "DELETE FROM sms_status")
-	_, err := app.DB.ExecContext(context.Background(), `INSERT INTO sms_status (user_id,type,status,recipient,provider,sms_identifier,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, 5, model.NORMAL, Pending, "+1", "operatorA", "sid-1")
+	_, _ = app.DB.ExecContext(context.Background(), "DELETE FROM message_status")
+	_, err := app.DB.ExecContext(context.Background(), `INSERT INTO message_status (user_id,type,status,recipient,provider,message_identifier,created_at,updated_at) VALUES (?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, 5, model.NORMAL, Pending, "+1", "operatorA", "sid-1")
 	if err != nil {
 		t.Fatalf("seed history: %v", err)
 	}
 
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/sms/history?user_id=5&status=pending&sms_identifier=sid-1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/messages/history?user_id=5&status=pending&message_identifier=sid-1", nil)
 	rec := httptest.NewRecorder()
 	ctx := e.NewContext(req, rec)
 

@@ -1,4 +1,4 @@
-package sms
+package message
 
 import (
 	"encoding/json"
@@ -17,19 +17,19 @@ import (
 )
 
 // SendHandler godoc
-// @Summary      Send SMS request
-// @Description  Deducts balance, enqueues SMS for processing, returns processing ack
-// @Tags         sms
+// @Summary      Send message request
+// @Description  Deducts balance, enqueues a message for processing, returns processing ack
+// @Tags         message
 // @Accept       json
 // @Produce      json
-// @Param        request body model.SMS true "SMS request"
-// @Success      200 {object} map[string]any "ack with sms_identifier"
+// @Param        request body model.Message true "message request"
+// @Success      200 {object} map[string]any "ack with message_identifier"
 // @Failure      400 {string} string "invalid input"
 // @Failure      402 {string} string "dont have Not Enough Balance"
 // @Failure      500 {string} string "internal error"
-// @Router       /sms/send [post]
+// @Router       /messages/send [post]
 func SendHandler(c echo.Context) error {
-	var s model.SMS
+	var s model.Message
 	if err := json.NewDecoder(c.Request().Body).Decode(&s); err != nil {
 		app.Logger.Error("invalid input ", "err", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid input")
@@ -43,7 +43,7 @@ func SendHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "zero recipients")
 	}
 
-	s.SmsIdentifier = uuid.NewString()
+	s.MessageIdentifier = uuid.NewString()
 	// Atomic: deduct balance (user_transactions) + insert outbox (pending) in ONE DB transaction.
 	tx, err := app.DB.BeginTxx(c.Request().Context(), nil)
 	if err != nil {
@@ -76,21 +76,21 @@ func SendHandler(c echo.Context) error {
 
 	// Initial state: PENDING (inserted with the outbox record)
 	if err := InsertPendingTx(c.Request().Context(), tx, s); err != nil {
-		app.Logger.Error("insert sms pending", "err", err)
+		app.Logger.Error("insert message pending", "err", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
 	}
 
-	// Store SMS message in outbox for the job to publish to Rabbit.
+	// Store the message in the outbox for the publisher to forward to RabbitMQ.
 	if err := outbox.InsertTx(c.Request().Context(), tx, outbox.Event{
-		AggregateType: "sms",
-		AggregateID:   s.SmsIdentifier,
-		EventType:     "sms.send",
+		AggregateType: "message",
+		AggregateID:   s.MessageIdentifier,
+		EventType:     "message.send",
 		Priority:      priority,
 		Status:        outbox.StatusPending,
 		Payload: map[string]any{
-			"exchange":       config.SmsExchange,
+			"exchange":       config.MessageExchange,
 			"routing_key":    getQueue(s.Type),
-			"sms":            s,
+			"message":        s,
 			"transaction_id": s.TransactionID,
 		},
 	}); err != nil {
@@ -104,24 +104,24 @@ func SendHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, map[string]string{
-		"status":         "processing",
-		"sms_identifier": s.SmsIdentifier,
+		"status":             "processing",
+		"message_identifier": s.MessageIdentifier,
 	})
 }
 
 // HistoryHandler godoc
-// @Summary      Get SMS history for user
-// @Description  Returns sent SMS history for a user
-// @Tags         sms
+// @Summary      Get message history for user
+// @Description  Returns sent message history for a user
+// @Tags         message
 // @Accept       json
 // @Produce      json
 // @Param        user_id query string true "User ID"
 // @Param        status query string false "Filter by status (pending|sending|done|failed)"
-// @Param        sms_identifier query string false "Filter by sms_identifier"
+// @Param        message_identifier query string false "Filter by message_identifier"
 // @Success      200 {object} map[string]any
 // @Failure      400 {string} string "user_id is required"
 // @Failure      500 {string} string "internal error"
-// @Router       /sms/history [get]
+// @Router       /messages/history [get]
 func HistoryHandler(c echo.Context) error {
 	userID := c.QueryParam("user_id")
 	if userID == "" {
@@ -129,11 +129,11 @@ func HistoryHandler(c echo.Context) error {
 	}
 
 	status := c.QueryParam("status")
-	smsIdentifier := c.QueryParam("sms_identifier")
+	messageIdentifier := c.QueryParam("message_identifier")
 
-	history, err := GetUserHistory(c.Request().Context(), userID, status, smsIdentifier)
+	history, err := GetUserHistory(c.Request().Context(), userID, status, messageIdentifier)
 	if err != nil {
-		app.Logger.Error("get sms history", "user_id", userID, "status", status, "sms_identifier", smsIdentifier, "err", err)
+		app.Logger.Error("get message history", "user_id", userID, "status", status, "message_identifier", messageIdentifier, "err", err)
 		return err
 	}
 

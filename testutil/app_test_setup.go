@@ -43,15 +43,15 @@ func SetupAppTest(t *testing.T) (context.Context, func()) {
 
 	// base env defaults
 	_ = os.Setenv("LISTEN_ADDR", ":0")
-	_ = os.Setenv("DB_USER_NAME", "sms_user")
-	_ = os.Setenv("DB_PASSWORD", "sms_pass")
+	_ = os.Setenv("DB_USER_NAME", "message_user")
+	_ = os.Setenv("DB_PASSWORD", "message_pass")
 	_ = os.Setenv("DB_HOST", "localhost")
 	_ = os.Setenv("DB_PORT", "3306")
-	_ = os.Setenv("DB_NAME", "sms_gateway")
+	_ = os.Setenv("DB_NAME", "messaging_platform")
 	_ = os.Setenv("RABBIT_URI", "amqp://rabbit_user:rabbit_pass@localhost:5672/")
-	_ = os.Setenv("RABBIT_SMS_EXCHANGE", "sms_exchange")
-	_ = os.Setenv("EXPRESS_QUEUE", "sms_express")
-	_ = os.Setenv("NORMAL_QUEUE", "sms_normal")
+	_ = os.Setenv("RABBIT_MESSAGE_EXCHANGE", "message_exchange")
+	_ = os.Setenv("EXPRESS_QUEUE", "message_express")
+	_ = os.Setenv("NORMAL_QUEUE", "message_normal")
 
 	mysqlC, host, port := MySQL(ctx, t)
 

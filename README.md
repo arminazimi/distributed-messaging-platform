@@ -5,14 +5,14 @@
 - Robustness: graceful shutdown for server + workers, panic recovery middleware, balance refund on provider failure.
 - Message flow: **Transactional outbox** for reliable publish, RabbitMQ for async delivery, MySQL for balance/transactions/history, operator failover with circuit breaker.
 
-A small SMS gateway service that exposes HTTP APIs, manages user balance, writes SMS requests to an **outbox** (pending), publishes them to RabbitMQ via an outbox worker, processes delivery via operators with circuit breaker failover, and persists traces/metrics. Built with Go, Echo, MySQL, RabbitMQ, OpenTelemetry, and Prometheus-compatible metrics.
+A distributed messaging platform that exposes HTTP APIs, manages user balance, writes message requests to an **outbox** (pending), publishes them to RabbitMQ via an outbox worker, processes delivery via operators with circuit breaker failover, and persists traces/metrics. Built with Go, Echo, MySQL, RabbitMQ, OpenTelemetry, and Prometheus-compatible metrics.
 
 ## Architecture
 - API: Echo HTTP server (`cmd/api/main.go`) with JSON logging (slog), tracing middleware, metrics endpoint, and panic recovery.
 - Balance: Reads/updates user balances and transactions (`internal/balance`).
-- SMS: Accepts send requests, debits balance, writes **sms_status (PENDING)** + **outbox_events (pending)**, exposes history (`internal/sms`).
-- Outbox publisher: Polls `outbox_events` and publishes to RabbitMQ with priority worker pools (`internal/sms/outbox_publisher.go`).
-- Queue consumers: Consume Rabbit messages and call `sendSms` (`internal/sms/consumer.go`).
+- Messaging: Accepts send requests, debits balance, writes **message_status (PENDING)** + **outbox_events (pending)**, exposes history (`internal/message`).
+- Outbox publisher: Polls `outbox_events` and publishes to RabbitMQ with priority worker pools (`internal/message/outbox_publisher.go`).
+- Queue consumers: Consume Rabbit messages and call `sendMessage` (`internal/message/consumer.go`).
 - Operators: Provider failover with circuit breaker (`internal/operator`, `pkg/circuitbreaker`).
 - Observability: OpenTelemetry tracing (`pkg/tracing`), metrics (`pkg/metrics`), structured logs (`app.Logger`).
 
@@ -32,7 +32,7 @@ graph LR
     QN[NORMAL_QUEUE]
     QE[EXPRESS_QUEUE]
     Pub[Outbox Publisher]
-    Worker[SMS Consumer Worker]
+    Worker[Message Consumer Worker]
   end
   subgraph Providers
     OpA[Operator A]
@@ -40,7 +40,7 @@ graph LR
   end
   Obs[Prometheus / OTEL]
 
-  Client -->|HTTP /sms| API
+  Client -->|HTTP /messages| API
   API -->|charge, insert PENDING, insert outbox| DB
   DB --> OUTBOX
   Pub -->|claim pending outbox| OUTBOX
@@ -61,17 +61,53 @@ graph LR
 - **`app/`**: Application bootstrap (config, logger, tracing, DB, Rabbit, Echo middlewares including recover).
 - **`cmd/api/main.go`**: Route wiring, graceful shutdown, consumer start.
 - **`internal/balance`**: Balance checks, deductions, refunds, history (transactions table).
-- **`internal/sms`**: Send handler, history query, worker `sendSms` writes `sms_status`, refunds on failure.
+- **`internal/message`**: Send handler, history query, worker `sendMessage` writes `message_status`, refunds on failure.
 - **`internal/operator`**: Sends to OperatorA then fails over to B via circuit breaker.
 - **`pkg/queue`**: Rabbit connection/publish/consumer setup.
 - **`pkg/metrics`**: Echo middleware and Prometheus exposition.
 - **`pkg/tracing`**: OpenTelemetry exporter init and helpers.
 
+## Performance Benchmark
+This project includes a lightweight benchmark driver in `cmd/loadtest` for measuring the `/messages/send` ingestion path under concurrent HTTP traffic. The benchmark exercises the API layer, balance validation, message request persistence, and transactional outbox enqueue path while the service runs with MySQL and RabbitMQ in Docker Compose.
+
+Start the stack:
+```bash
+docker compose up --build
+```
+
+In another terminal, seed test balances for the benchmark users:
+```bash
+make seed
+```
+
+The default seed command inserts balance directly into MySQL for users `1..5000`, which is faster and more repeatable than calling the balance API thousands of times. If you want to seed through the public HTTP API instead, use:
+```bash
+go run ./cmd/loadtest -seed-only -seed-method http -base-url http://localhost:8080 -seed-balance 100000 -users 5000
+```
+
+Run the benchmark:
+```bash
+make benchmark
+```
+
+The default benchmark sends traffic to `POST /messages/send` at `1000` requested RPS for `30s`, with `200` concurrent workers, `5000` rotating users, one recipient per request, and a `20%` express-message ratio. You can override these values without editing the Makefile:
+```bash
+BENCH_RPS=500 BENCH_CONCURRENCY=100 BENCH_DURATION=60s BENCH_USERS=5000 make benchmark
+```
+
+The benchmark measures API ingestion throughput, successful request processing, client-side errors, and latency percentiles for accepted message requests. These results help evaluate whether the service can sustain high write concurrency while preserving low tail latency across the database-backed outbox workflow.
+
+| Target RPS | Achieved RPS | Concurrency | Duration | Total Requests | Successful Requests | Non-2xx Responses | HTTP Errors | Success Rate | p50 Latency | p90 Latency | p95 Latency | p99 Latency | Max Latency |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1000 | 995.3 | 200 | 30s | 29,860 | 29,856 | 0 | 4 | 99.987% | 4.33 ms | 8.21 ms | 11.26 ms | 26.02 ms | 84.97 ms |
+
+The benchmark demonstrates that the platform can sustain approximately 1,000 requests per second with 99.98% successful request processing and sub-30ms p99 latency in a local Docker Compose environment.
+
 ## Routes
-- **POST /sms/send**: Charge balance and **enqueue via outbox** (no direct Rabbit publish in handler).
+- **POST /messages/send**: Charge balance and **enqueue via outbox** (no direct Rabbit publish in handler).
   - Example:
     ```bash
-    curl --location 'http://localhost:8080/sms/send' \
+    curl --location 'http://localhost:8080/messages/send' \
       --header 'Content-Type: application/json' \
       --data '{
         "customer_id": 1,
@@ -83,10 +119,10 @@ graph LR
         "type": "normal"
       }'
     ```
-- **GET /sms/history**: SMS status history with optional filters.
+- **GET /messages/history**: Message status history with optional filters.
   - Example:
     ```bash
-    curl --location 'localhost:8080/sms/history?user_id=1&status=pending&sms_identifier=88636fb2-dd01-42a4-a718-1fe200683a45'
+    curl --location 'localhost:8080/messages/history?user_id=1&status=pending&message_identifier=88636fb2-dd01-42a4-a718-1fe200683a45'
     ```
 - **GET /balance**: Current balance + transactions.
   - Example:
@@ -103,13 +139,13 @@ graph LR
 - **GET /swagger/***: Swagger UI (served by the API)
 - **GET /metrics**: Prometheus metrics.
 
-Routing by type: normal SMS → `NORMAL_QUEUE`; express SMS → `EXPRESS_QUEUE`.
+Routing by type: normal message → `NORMAL_QUEUE`; express message → `EXPRESS_QUEUE`.
 
 Swagger UI default URL (adjust port to your `LISTEN_ADDR`): `http://localhost:8080/swagger/index.html`
 - **Postman collection:** `postman/collections/Arvan.postman_collection.json`
 
-## SMS state machine
-- **PENDING**: inserted during `/sms/send` (alongside outbox insert)
+## Message state machine
+- **PENDING**: inserted during `/messages/send` (alongside outbox insert)
 - **SENDING**: set by consumer right before calling `operator.Send`
 - **DONE**: set on successful provider send
 - **FAILED**: set on failure (and balance refund is applied)
@@ -147,19 +183,19 @@ CREATE TABLE user_transactions (
     INDEX idx_user_transactions_user_id (user_id, created_at)
 ) ENGINE=InnoDB;
 
-CREATE TABLE sms_status (
+CREATE TABLE message_status (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     status VARCHAR(50) NOT NULL,
     type VARCHAR(50) NOT NULL,
     recipient VARCHAR(20) NOT NULL,
     provider VARCHAR(50) NOT NULL DEFAULT '',
-    sms_identifier VARCHAR(50) NOT NULL,
+    message_identifier VARCHAR(50) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_sms_status_identifier_recipient (sms_identifier, recipient),
-    INDEX idx_sms_status_user_identifier (user_id, sms_identifier),
-    INDEX idx_sms_status_user_status_created (user_id, status, created_at)
+    UNIQUE KEY uq_message_status_identifier_recipient (message_identifier, recipient),
+    INDEX idx_message_status_user_identifier (user_id, message_identifier),
+    INDEX idx_message_status_user_status_created (user_id, status, created_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE outbox_events (
@@ -180,7 +216,7 @@ CREATE TABLE outbox_events (
 ) ENGINE=InnoDB;
 ```
 
-## Request lifecycle: `/sms/send`
+## Request lifecycle: `/messages/send`
 ```mermaid
 sequenceDiagram
   participant C as Client
@@ -195,37 +231,37 @@ sequenceDiagram
   participant A as Operator A
   participant B as Operator B (fallback)
 
-  C->>API: POST /sms/send (JSON)
+  C->>API: POST /messages/send (JSON)
   API->>BAL: ChargeTx (transaction_id)
-  API->>DB: Insert sms_status(PENDING)
-  API->>OUT: Insert outbox(sms.send, pending, priority)
-  API-->>C: 200 {sms_identifier, status:"processing"}
+  API->>DB: Insert message_status(PENDING)
+  API->>OUT: Insert outbox(message.send, pending, priority)
+  API-->>C: 200 {message_identifier, status:"processing"}
   PUB->>OUT: Claim pending (priority desc)
   alt type == normal
-    PUB->>MQN: Publish (sms_identifier)
+    PUB->>MQN: Publish (message_identifier)
   else type == express
-    PUB->>MQE: Publish (sms_identifier)
+    PUB->>MQE: Publish (message_identifier)
   end
   W->>MQN: Consume (normal)
   W->>MQE: Consume (express)
-  W->>DB: Update sms_status(SENDING)
+  W->>DB: Update message_status(SENDING)
   W->>A: Send
   alt A fails or CB open
     W->>B: Send fallback
   end
   alt send failed
     W->>BAL: Refund by transaction_id
-    W->>DB: Update sms_status(state=failed)
+    W->>DB: Update message_status(state=failed)
   else send ok
-    W->>DB: Update sms_status(state=done, provider)
+    W->>DB: Update message_status(state=done, provider)
   end
 ```
 
 ## Worker processing (simplified)
 1. Outbox publisher claims `outbox_events` and publishes to Rabbit.
 2. Consumer consumes from RabbitMQ queue.
-3. Deserialize `model.SMS`.
-4. `sendSms`: update `sms_status` to **SENDING**, call `operator.Send` (A then B with circuit breaker), on failure mark **FAILED** + refund, on success mark **DONE** with provider.
+3. Deserialize `model.Message`.
+4. `sendMessage`: update `message_status` to **SENDING**, call `operator.Send` (A then B with circuit breaker), on failure mark **FAILED** + refund, on success mark **DONE** with provider.
 
 ## Circuit breaker + failover
 - Implemented in `pkg/circuitbreaker` and used by `internal/operator.Send`.
@@ -263,42 +299,6 @@ DB connection pooling can be tuned via env:
 - `DB_CONN_MAX_LIFETIME_SEC` (default 300)
 
 
-## Performance Benchmark
-This project includes a lightweight benchmark driver in `cmd/loadtest` for measuring the `/sms/send` ingestion path under concurrent HTTP traffic. The benchmark exercises the API layer, balance validation, SMS request persistence, and transactional outbox enqueue path while the service runs with MySQL and RabbitMQ in Docker Compose.
-
-Start the stack:
-```bash
-docker compose up --build
-```
-
-In another terminal, seed test balances for the benchmark users:
-```bash
-make seed
-```
-
-The default seed command inserts balance directly into MySQL for users `1..5000`, which is faster and more repeatable than calling the balance API thousands of times. If you want to seed through the public HTTP API instead, use:
-```bash
-go run ./cmd/loadtest -seed-only -seed-method http -base-url http://localhost:8080 -seed-balance 100000 -users 5000
-```
-
-Run the benchmark:
-```bash
-make benchmark
-```
-
-The default benchmark sends traffic to `POST /sms/send` at `1000` requested RPS for `30s`, with `200` concurrent workers, `5000` rotating users, one recipient per request, and a `20%` express-message ratio. You can override these values without editing the Makefile:
-```bash
-BENCH_RPS=500 BENCH_CONCURRENCY=100 BENCH_DURATION=60s BENCH_USERS=5000 make benchmark
-```
-
-The benchmark measures API ingestion throughput, successful request processing, client-side errors, and latency percentiles for accepted SMS requests. These results help evaluate whether the service can sustain high write concurrency while preserving low tail latency across the database-backed outbox workflow.
-
-| Target RPS | Achieved RPS | Concurrency | Duration | Total Requests | Successful Requests | Non-2xx Responses | HTTP Errors | Success Rate | p50 Latency | p90 Latency | p95 Latency | p99 Latency | Max Latency |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1000 | 995.3 | 200 | 30s | 29,860 | 29,856 | 0 | 4 | 99.987% | 4.33 ms | 8.21 ms | 11.26 ms | 26.02 ms | 84.97 ms |
-
-The benchmark demonstrates that the platform can sustain approximately 1,000 requests per second with 99.98% successful request processing and sub-30ms p99 latency in a local Docker Compose environment.
-
 ## Observability
 - **Logs**: Structured JSON via slog to stdout.
 - **Tracing**: OpenTelemetry exporter configured by env; spans include user_id where available.
@@ -311,7 +311,7 @@ The benchmark demonstrates that the platform can sustain approximately 1,000 req
 
 ## Testing
 - Unit/integration tests use `testcontainers` for MySQL/Rabbit in `testutil/`.
-- Balance & SMS logic covered under `internal/.../*_test.go`.
+- Balance and messaging logic covered under `internal/.../*_test.go`.
 - Run: `go test ./...`
 
 ## Diagrams (service context)
@@ -333,7 +333,7 @@ flowchart LR
     MQ[RabbitMQ]
     QN[NORMAL_QUEUE]
     QE[EXPRESS_QUEUE]
-    C[SMS Consumer Workers]
+    C[Message Consumer Workers]
   end
 
   subgraph Providers
@@ -346,9 +346,9 @@ flowchart LR
     Traces[Tracing OTEL]
   end
 
-  Client -->|POST /sms/send| API
-  API -->|ChargeTx + insert sms_status PENDING| DB
-  API -->|Insert outbox sms.send pending| OUTBOX
+  Client -->|POST /messages/send| API
+  API -->|ChargeTx + insert message_status PENDING| DB
+  API -->|Insert outbox message.send pending| OUTBOX
 
   PUB -->|claim pending priority DESC| OUTBOX
   PUB --> Pools

@@ -1,4 +1,4 @@
-package sms
+package message
 
 import (
 	"context"
@@ -24,7 +24,7 @@ func StartConsumers(ctx context.Context) error {
 			))
 			defer span.End()
 			return metrics.WorkerObserver(queue, func(innerCtx context.Context) error {
-				var msg model.SMS
+				var msg model.Message
 				if err := json.Unmarshal(d.Body, &msg); err == nil {
 					innerCtx = tracing.WithUser(innerCtx, fmt.Sprint(msg.CustomerID))
 				}
@@ -38,7 +38,7 @@ func StartConsumers(ctx context.Context) error {
 		config.RabbitmqUri,
 		config.ExpressQueue,
 		config.ExpressQueue,
-		config.SmsExchange,
+		config.MessageExchange,
 		10,
 		wrap(config.ExpressQueue, func(ctx context.Context, evt amqp091.Delivery) error {
 			defer func() {
@@ -46,15 +46,15 @@ func StartConsumers(ctx context.Context) error {
 					app.Logger.Error("ack failed", "err", err)
 				}
 			}()
-			var message model.SMS
+			var message model.Message
 			if err := json.Unmarshal(evt.Body, &message); err != nil {
-				app.Logger.Error("cannot unmarshal sms", "error", err)
-				return fmt.Errorf("cannot unmarshal sms : %w", err)
+				app.Logger.Error("cannot unmarshal message", "error", err)
+				return fmt.Errorf("cannot unmarshal message : %w", err)
 			}
 
 			app.Logger.Info("got message", "message", message)
 
-			if err := sendSms(ctx, message); err != nil {
+			if err := sendMessage(ctx, message); err != nil {
 				return err
 			}
 
@@ -68,7 +68,7 @@ func StartConsumers(ctx context.Context) error {
 		config.RabbitmqUri,
 		config.NormalQueue,
 		config.NormalQueue,
-		config.SmsExchange,
+		config.MessageExchange,
 		10,
 		wrap(config.NormalQueue, func(ctx context.Context, evt amqp091.Delivery) error {
 			defer func() {
@@ -76,15 +76,15 @@ func StartConsumers(ctx context.Context) error {
 					app.Logger.Error("ack failed", "err", err)
 				}
 			}()
-			var message model.SMS
+			var message model.Message
 			if err := json.Unmarshal(evt.Body, &message); err != nil {
-				app.Logger.Error("cannot unmarshal sms", "error", err)
-				return fmt.Errorf("cannot unmarshal sms : %w", err)
+				app.Logger.Error("cannot unmarshal message", "error", err)
+				return fmt.Errorf("cannot unmarshal message : %w", err)
 			}
 
 			app.Logger.Info("got message", "message", message)
 
-			if err := sendSms(ctx, message); err != nil {
+			if err := sendMessage(ctx, message); err != nil {
 				return err
 			}
 

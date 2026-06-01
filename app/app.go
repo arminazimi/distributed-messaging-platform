@@ -78,7 +78,7 @@ func iniRabbit() {
 	}
 	if err := amqp.SetupQueues(context.Background(), amqp.QueueSetup{
 		URI:      config.RabbitmqUri,
-		Exchange: config.SmsExchange,
+		Exchange: config.MessageExchange,
 		Bindings: []amqp.QueueBinding{
 			{Queue: config.ExpressQueue, RoutingKey: config.ExpressQueue},
 			{Queue: config.NormalQueue, RoutingKey: config.NormalQueue},

@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/go-connections/nat"
 	tc "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -21,9 +20,9 @@ func MySQL(ctx context.Context, tb *testing.T) (tc.Container, string, int) {
 		Image:        "mysql:8.4",
 		ExposedPorts: []string{"3306/tcp"},
 		Env: map[string]string{
-			"MYSQL_DATABASE":      "sms_gateway",
-			"MYSQL_USER":          "sms_user",
-			"MYSQL_PASSWORD":      "sms_pass",
+			"MYSQL_DATABASE":      "messaging_platform",
+			"MYSQL_USER":          "message_user",
+			"MYSQL_PASSWORD":      "message_pass",
 			"MYSQL_ROOT_PASSWORD": "root_pass",
 		},
 		WaitingFor: wait.ForLog("port: 3306  MySQL Community Server").WithStartupTimeout(90 * time.Second),
@@ -40,7 +39,7 @@ func MySQL(ctx context.Context, tb *testing.T) (tc.Container, string, int) {
 	if err != nil {
 		tb.Fatalf("mysql port: %v", err)
 	}
-	return mysqlC, host, port.Int()
+	return mysqlC, host, int(port.Num())
 }
 
 func Rabbit(ctx context.Context, t *testing.T) (tc.Container, string, int) {
@@ -67,9 +66,9 @@ func Rabbit(ctx context.Context, t *testing.T) (tc.Container, string, int) {
 	if err != nil {
 		t.Fatalf("rabbit host: %v", err)
 	}
-	port, err := c.MappedPort(ctx, nat.Port("5672/tcp"))
+	port, err := c.MappedPort(ctx, "5672/tcp")
 	if err != nil {
 		t.Fatalf("rabbit port: %v", err)
 	}
-	return c, host, port.Int()
+	return c, host, int(port.Num())
 }

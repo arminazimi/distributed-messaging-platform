@@ -22,7 +22,7 @@ loadtest:
 benchmark: loadtest
 
 seed:
-	DB_HOST=localhost DB_PORT=3306 DB_USER_NAME=sms_user DB_PASSWORD=sms_pass DB_NAME=sms_gateway \
+	DB_HOST=localhost DB_PORT=3306 DB_USER_NAME=message_user DB_PASSWORD=message_pass DB_NAME=messaging_platform \
 	go run ./cmd/loadtest -seed-only -seed-method db -seed-balance $(BENCH_SEED_BALANCE) -seed-timeout $(BENCH_SEED_TIMEOUT) -users $(BENCH_USERS)
 
 lint:

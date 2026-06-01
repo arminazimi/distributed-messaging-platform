@@ -151,7 +151,7 @@ func GetUserBalance(ctx context.Context, userID string) (int64, error) {
 	return balance, nil
 }
 
-func Refund(ctx context.Context, s model.SMS) (err error) {
+func Refund(ctx context.Context, s model.Message) (err error) {
 	if s.TransactionID == "" {
 		return errors.New("transaction_id is required for refund")
 	}

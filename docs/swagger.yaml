@@ -9,7 +9,7 @@ definitions:
       user_id:
         type: integer
     type: object
-  model.SMS:
+  model.Message:
     properties:
       customer_id:
         type: integer
@@ -17,7 +17,7 @@ definitions:
         items:
           type: string
         type: array
-      sms_identifier:
+      message_identifier:
         type: string
       text:
         type: string
@@ -37,8 +37,8 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: Simple SMS gateway with balance management and operator failover.
-  title: SMS Gateway API
+  description: Distributed messaging platform with balance management, asynchronous delivery, and operator failover.
+  title: Distributed Messaging Platform API
   version: "1.0"
 paths:
   /balance:
@@ -99,11 +99,11 @@ paths:
       summary: Add balance for user
       tags:
       - balance
-  /sms/history:
+  /messages/history:
     get:
       consumes:
       - application/json
-      description: Returns sent SMS history for a user
+      description: Returns sent Message history for a user
       parameters:
       - description: User ID
         in: query
@@ -114,9 +114,9 @@ paths:
         in: query
         name: status
         type: string
-      - description: Filter by sms_identifier
+      - description: Filter by message_identifier
         in: query
-        name: sms_identifier
+        name: message_identifier
         type: string
       produces:
       - application/json
@@ -134,27 +134,27 @@ paths:
           description: internal error
           schema:
             type: string
-      summary: Get SMS history for user
+      summary: Get Message history for user
       tags:
-      - sms
-  /sms/send:
+      - message
+  /messages/send:
     post:
       consumes:
       - application/json
-      description: Deducts balance, enqueues SMS for processing, returns processing
+      description: Deducts balance, enqueues Message for processing, returns processing
         ack
       parameters:
-      - description: SMS request
+      - description: message request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/model.SMS'
+          $ref: '#/definitions/model.Message'
       produces:
       - application/json
       responses:
         "200":
-          description: ack with sms_identifier
+          description: ack with message_identifier
           schema:
             additionalProperties: true
             type: object
@@ -170,7 +170,7 @@ paths:
           description: internal error
           schema:
             type: string
-      summary: Send SMS request
+      summary: Send message request
       tags:
-      - sms
+      - message
 swagger: "2.0"

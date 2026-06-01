@@ -15,7 +15,7 @@ import (
 )
 
 type Operator interface {
-	Send(ctx context.Context, s model.SMS) error
+	Send(ctx context.Context, s model.Message) error
 }
 
 var (
@@ -33,7 +33,7 @@ var (
 	operatorTimeout = 2 * time.Second
 )
 
-func Send(ctx context.Context, s model.SMS) (string, error) {
+func Send(ctx context.Context, s model.Message) (string, error) {
 	if provider, err := dispatch(ctx, "operatorA", primaryOperator, operatorBreaker, s); err == nil {
 		return provider, nil
 	}
@@ -43,7 +43,7 @@ func Send(ctx context.Context, s model.SMS) (string, error) {
 	return dispatch(ctx, "operatorB", fallbackOperator, nil, s)
 }
 
-func dispatch(ctx context.Context, name string, op Operator, breaker *circuitbreaker.Breaker, s model.SMS) (string, error) {
+func dispatch(ctx context.Context, name string, op Operator, breaker *circuitbreaker.Breaker, s model.Message) (string, error) {
 	ctx, span := tracing.Start(ctx, "operator.dispatch",
 		tracing.Attr("operator", name),
 		tracing.Attr("type", string(s.Type)),

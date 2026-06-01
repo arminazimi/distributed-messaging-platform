@@ -103,9 +103,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/sms/history": {
+        "/messages/history": {
             "get": {
-                "description": "Returns sent SMS history for a user",
+                "description": "Returns sent Message history for a user",
                 "consumes": [
                     "application/json"
                 ],
@@ -113,9 +113,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "sms"
+                    "message"
                 ],
-                "summary": "Get SMS history for user",
+                "summary": "Get Message history for user",
                 "parameters": [
                     {
                         "type": "string",
@@ -132,8 +132,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Filter by sms_identifier",
-                        "name": "sms_identifier",
+                        "description": "Filter by message_identifier",
+                        "name": "message_identifier",
                         "in": "query"
                     }
                 ],
@@ -160,9 +160,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/sms/send": {
+        "/messages/send": {
             "post": {
-                "description": "Deducts balance, enqueues SMS for processing, returns processing ack",
+                "description": "Deducts balance, enqueues Message for processing, returns processing ack",
                 "consumes": [
                     "application/json"
                 ],
@@ -170,23 +170,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "sms"
+                    "message"
                 ],
-                "summary": "Send SMS request",
+                "summary": "Send message request",
                 "parameters": [
                     {
-                        "description": "SMS request",
+                        "description": "message request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.SMS"
+                            "$ref": "#/definitions/model.Message"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "ack with sms_identifier",
+                        "description": "ack with message_identifier",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true
@@ -229,7 +229,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.SMS": {
+        "model.Message": {
             "type": "object",
             "properties": {
                 "customer_id": {
@@ -241,7 +241,7 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "sms_identifier": {
+                "message_identifier": {
                     "type": "string"
                 },
                 "text": {
@@ -275,8 +275,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "SMS Gateway API",
-	Description:      "Simple SMS gateway with balance management and operator failover.",
+	Title:            "Distributed Messaging Platform API",
+	Description:      "Distributed messaging platform with balance management, asynchronous delivery, and operator failover.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

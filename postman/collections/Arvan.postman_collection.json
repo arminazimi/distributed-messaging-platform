@@ -65,19 +65,19 @@
       "response": []
     },
     {
-      "name": "SMS History",
+      "name": "Message History",
       "id": "362c9234-346a-48a5-b4f9-2a6efb29b232",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "localhost:8080/sms/history?user_id=1&status=init&sms_identifier=05f6ccea-a5c9-4867-8a1a-d9b8a018d556",
+          "raw": "localhost:8080/messages/history?user_id=1&status=init&message_identifier=05f6ccea-a5c9-4867-8a1a-d9b8a018d556",
           "host": [
             "localhost"
           ],
           "port": "8080",
           "path": [
-            "sms",
+            "message",
             "history"
           ],
           "query": [
@@ -91,7 +91,7 @@
               "description": "init , done "
             },
             {
-              "key": "sms_identifier",
+              "key": "message_identifier",
               "value": "05f6ccea-a5c9-4867-8a1a-d9b8a018d556"
             }
           ]
@@ -100,7 +100,7 @@
       "response": []
     },
     {
-      "name": "SMS Send",
+      "name": "Message Send",
       "id": "eb372ebf-4188-4875-80e3-27b3ac3c21c1",
       "request": {
         "method": "POST",
@@ -120,13 +120,13 @@
           }
         },
         "url": {
-          "raw": "localhost:8080/sms/send",
+          "raw": "localhost:8080/messages/send",
           "host": [
             "localhost"
           ],
           "port": "8080",
           "path": [
-            "sms",
+            "message",
             "send"
           ]
         }

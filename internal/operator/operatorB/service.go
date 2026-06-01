@@ -8,13 +8,13 @@ import (
 
 type OB struct{}
 
-func (o OB) Send(ctx context.Context, s model.SMS) error {
+func (o OB) Send(ctx context.Context, s model.Message) error {
 
 	//for test refund
 	//return errors.New("fall down")
 
 	for _, v := range s.Recipients {
-		app.Logger.Info("your sms has sent ",
+		app.Logger.Info("your message has sent ",
 			"user id : ", s.CustomerID,
 			"msg : ", s.Text,
 			"number : ", v,

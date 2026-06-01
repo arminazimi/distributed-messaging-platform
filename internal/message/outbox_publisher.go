@@ -1,4 +1,4 @@
-package sms
+package message
 
 import (
 	"context"
@@ -20,11 +20,11 @@ type outboxRow struct {
 	CreatedAt time.Time       `db:"created_at"`
 }
 
-type smsOutboxPayload struct {
-	Exchange    string    `json:"exchange"`
-	RoutingKey  string    `json:"routing_key"`
-	SMS         model.SMS `json:"sms"`
-	Transaction string    `json:"transaction_id"`
+type messageOutboxPayload struct {
+	Exchange      string        `json:"exchange"`
+	RoutingKey    string        `json:"routing_key"`
+	Message       model.Message `json:"message"`
+	TransactionID string        `json:"transaction_id"`
 }
 
 const (
@@ -42,7 +42,7 @@ const (
 	lowIdleSleep  = 250 * time.Millisecond
 )
 
-// StartOutboxPublisher polls outbox_events and publishes sms.send events to RabbitMQ.
+// StartOutboxPublisher polls outbox_events and publishes message.send events to RabbitMQ.
 // Higher priority events are published first.
 func StartOutboxPublisher(ctx context.Context) error {
 	// High-priority pool (express): more workers and more aggressive polling.
@@ -103,7 +103,7 @@ func claimPending(ctx context.Context, limit int, minPriority int, maxPriority *
 		SELECT id, payload, attempts, created_at
 		FROM outbox_events
 		WHERE status = 'pending'
-		  AND event_type = 'sms.send'
+		  AND event_type = 'message.send'
 		  AND priority >= ?
 		  AND (? IS NULL OR priority < ?)
 		  AND (next_run_at IS NULL OR next_run_at <= CURRENT_TIMESTAMP)
@@ -154,13 +154,13 @@ func markProcessing(ctx context.Context, tx *sqlx.Tx, ids []any) error {
 }
 
 func publishOne(ctx context.Context, r outboxRow) error {
-	var p smsOutboxPayload
+	var p messageOutboxPayload
 	if err := json.Unmarshal(r.Payload, &p); err != nil {
 		return failOrRetry(ctx, r.ID, r.Attempts, err, nil)
 	}
 
 	// Publish to Rabbit.
-	msg, err := json.Marshal(p.SMS)
+	msg, err := json.Marshal(p.Message)
 	if err != nil {
 		return failOrRetry(ctx, r.ID, r.Attempts, err, &p)
 	}
@@ -177,7 +177,7 @@ func publishOne(ctx context.Context, r outboxRow) error {
 	return err
 }
 
-func failOrRetry(ctx context.Context, id int64, attempts int, cause error, payload *smsOutboxPayload) error {
+func failOrRetry(ctx context.Context, id int64, attempts int, cause error, payload *messageOutboxPayload) error {
 	nextAttempts := attempts + 1
 	const maxAttempts = 10
 
@@ -187,8 +187,8 @@ func failOrRetry(ctx context.Context, id int64, attempts int, cause error, paylo
 
 	if nextAttempts >= maxAttempts {
 		// Permanent failure: refund (best-effort) and mark failed.
-		if payload != nil && payload.SMS.TransactionID != "" && payload.SMS.CustomerID != 0 {
-			_ = balance.Refund(ctx, model.SMS{CustomerID: payload.SMS.CustomerID, TransactionID: payload.SMS.TransactionID})
+		if payload != nil && payload.Message.TransactionID != "" && payload.Message.CustomerID != 0 {
+			_ = balance.Refund(ctx, model.Message{CustomerID: payload.Message.CustomerID, TransactionID: payload.Message.TransactionID})
 		}
 		_, err := app.DB.ExecContext(ctx,
 			`UPDATE outbox_events SET status='failed', attempts=?, last_error=? WHERE id=?`,

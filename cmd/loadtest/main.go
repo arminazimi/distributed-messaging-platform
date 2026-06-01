@@ -20,7 +20,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type smsReq struct {
+type messageReq struct {
 	CustomerID int64    `json:"customer_id"`
 	Text       string   `json:"text"`
 	Recipients []string `json:"recipients"`
@@ -79,7 +79,7 @@ func main() {
 		}
 	}
 
-	endpoint := *baseURL + "/sms/send"
+	endpoint := *baseURL + "/messages/send"
 	balanceEndpoint := *baseURL + "/balance/add"
 	client := &http.Client{Timeout: *timeout}
 
@@ -149,7 +149,7 @@ func main() {
 			defer wg.Done()
 			rng := rand.New(rand.NewSource(time.Now().UnixNano() + int64(workerID)))
 			for range tokens {
-				reqBody := smsReq{
+				reqBody := messageReq{
 					CustomerID: *userStart + (rng.Int63() % *users),
 					Text:       "hello",
 					Recipients: makeRecipients(*recipients),
@@ -398,11 +398,11 @@ func seedBalancesDB(ctx context.Context, dsn string, userStart int64, users int6
 }
 
 func buildDSNFromEnv() string {
-	user := getenvDefault("DB_USER_NAME", "sms_user")
-	pass := getenvDefault("DB_PASSWORD", "sms_pass")
+	user := getenvDefault("DB_USER_NAME", "message_user")
+	pass := getenvDefault("DB_PASSWORD", "message_pass")
 	host := getenvDefault("DB_HOST", "localhost")
 	port := getenvDefault("DB_PORT", "3306")
-	db := getenvDefault("DB_NAME", "sms_gateway")
+	db := getenvDefault("DB_NAME", "messaging_platform")
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&loc=Local&charset=utf8mb4&collation=utf8mb4_unicode_ci",
 		user, pass, host, port, db,
 	)

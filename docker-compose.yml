@@ -3,12 +3,12 @@ version: "3.9"
 services:
   mysql:
     image: mysql:8.4
-    container_name: sms_gateway_mysql
+    container_name: messaging_platform_mysql
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: sms_gateway
-      MYSQL_USER: sms_user
-      MYSQL_PASSWORD: sms_pass
+      MYSQL_DATABASE: messaging_platform
+      MYSQL_USER: message_user
+      MYSQL_PASSWORD: message_pass
       MYSQL_ROOT_PASSWORD: root_pass
     ports:
       - "3306:3306"
@@ -22,7 +22,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:3.13-management
-    container_name: sms_gateway_rabbitmq
+    container_name: messaging_platform_rabbitmq
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: rabbit_user
@@ -41,7 +41,7 @@ services:
   app:
     build: .
     image: gateway:latest
-    container_name: sms_gateway_app
+    container_name: messaging_platform_app
     depends_on:
       mysql:
         condition: service_healthy
@@ -49,15 +49,15 @@ services:
         condition: service_healthy
     environment:
       LISTEN_ADDR: ":8080"
-      DB_USER_NAME: sms_user
-      DB_PASSWORD: sms_pass
+      DB_USER_NAME: message_user
+      DB_PASSWORD: message_pass
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_NAME: sms_gateway
+      DB_NAME: messaging_platform
       RABBIT_URI: amqp://rabbit_user:rabbit_pass@rabbitmq:5672/
-      RABBIT_SMS_EXCHANGE: sms_exchange
-      EXPRESS_QUEUE: sms_express
-      NORMAL_QUEUE: sms_normal
+      RABBIT_MESSAGE_EXCHANGE: message_exchange
+      EXPRESS_QUEUE: message_express
+      NORMAL_QUEUE: message_normal
       OTEL_EXPORTER_OTLP_ENDPOINT: localhost:4317
       OTEL_EXPORTER_OTLP_INSECURE: true
     ports:

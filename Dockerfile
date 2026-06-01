@@ -19,7 +19,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/gateway ./cmd/api
 
 # --- Runtime stage ---
-FROM alpine:edge AS runner
+FROM scratch AS runner
 WORKDIR /app
 
 # Copy binary and required runtime assets (DB schema for migrations)

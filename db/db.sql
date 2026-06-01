@@ -18,19 +18,19 @@ CREATE TABLE user_transactions (
     INDEX idx_user_transactions_user_id (user_id, created_at)
 ) ENGINE=InnoDB;
 
-CREATE TABLE sms_status (
+CREATE TABLE message_status (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
     status VARCHAR(50) NOT NULL,
     type VARCHAR(50) NOT NULL,
     recipient VARCHAR(20) NOT NULL,
     provider VARCHAR(50) NOT NULL DEFAULT '',
-    sms_identifier VARCHAR(50) NOT NULL,
+    message_identifier VARCHAR(50) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_sms_status_identifier_recipient (sms_identifier, recipient),
-    INDEX idx_sms_status_user_identifier (user_id, sms_identifier),
-    INDEX idx_sms_status_user_status_created (user_id, status, created_at)
+    UNIQUE KEY uq_message_status_identifier_recipient (message_identifier, recipient),
+    INDEX idx_message_status_user_identifier (user_id, message_identifier),
+    INDEX idx_message_status_user_status_created (user_id, status, created_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE outbox_events (
@@ -50,11 +50,11 @@ CREATE TABLE outbox_events (
     INDEX idx_outbox_pending (status, priority, next_run_at, created_at)
 ) ENGINE=InnoDB;
 
-# truncate table sms_status
+# truncate table message_status
 # truncate table user_transactions
 # truncate table user_balances
 
-drop table sms_status
+drop table message_status
 drop table user_transactions
 drop table user_balances
 drop table outbox_events

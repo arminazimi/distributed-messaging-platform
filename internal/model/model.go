@@ -7,11 +7,11 @@ const (
 	EXPRESS Type = "express"
 )
 
-type SMS struct {
-	CustomerID    int64    `json:"customer_id"`
-	Text          string   `json:"text"`
-	Recipients    []string `json:"recipients"`
-	Type          Type     `json:"type"`
-	TransactionID string   `json:"transaction_id"`
-	SmsIdentifier string   `json:"sms_identifier"`
+type Message struct {
+	CustomerID        int64    `json:"customer_id"`
+	Text              string   `json:"text"`
+	Recipients        []string `json:"recipients"`
+	Type              Type     `json:"type"`
+	TransactionID     string   `json:"transaction_id"`
+	MessageIdentifier string   `json:"message_identifier"`
 }

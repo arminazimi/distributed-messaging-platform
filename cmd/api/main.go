@@ -5,7 +5,7 @@ import (
 	"gateway/app"
 	"gateway/config"
 	"gateway/internal/balance"
-	"gateway/internal/sms"
+	"gateway/internal/message"
 	"gateway/pkg/metrics"
 	"os/signal"
 	"syscall"
@@ -16,17 +16,17 @@ import (
 	echSwagger "github.com/swaggo/echo-swagger"
 )
 
-// @title           SMS Gateway API
+// @title           Distributed Messaging Platform API
 // @version         1.0
-// @description     Simple SMS gateway with balance management and operator failover.
+// @description     Distributed messaging platform with balance management, asynchronous delivery, and operator failover.
 // @host            localhost:8080
 // @BasePath        /
 func main() {
 	app.Init()
 
 	// Handlers
-	app.Echo.POST("/sms/send", sms.SendHandler)
-	app.Echo.GET("/sms/history", sms.HistoryHandler)
+	app.Echo.POST("/messages/send", message.SendHandler)
+	app.Echo.GET("/messages/history", message.HistoryHandler)
 
 	app.Echo.GET("/balance", balance.GetBalanceAndHistoryHandler)
 	app.Echo.POST("/balance/add", balance.AddBalanceHandler)
@@ -45,12 +45,12 @@ func main() {
 
 	consumerErrCh := make(chan error, 1)
 	go func() {
-		consumerErrCh <- sms.StartConsumers(ctx)
+		consumerErrCh <- message.StartConsumers(ctx)
 	}()
 
 	outboxErrCh := make(chan error, 1)
 	go func() {
-		outboxErrCh <- sms.StartOutboxPublisher(ctx)
+		outboxErrCh <- message.StartOutboxPublisher(ctx)
 	}()
 
 	select {
