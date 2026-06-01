@@ -140,11 +140,25 @@ The benchmark demonstrates that the platform can sustain approximately 1,000 req
     ```
 - **GET /swagger/***: Swagger UI (served by the API)
 - **GET /metrics**: Prometheus metrics.
+- **GET /healthz**: Liveness endpoint for process health.
+- **GET /readyz**: Readiness endpoint for dependency health.
 
 Routing by type: normal message → `NORMAL_QUEUE`; express message → `EXPRESS_QUEUE`.
 
 Swagger UI default URL (adjust port to your `LISTEN_ADDR`): `http://localhost:8080/swagger/index.html`
 - **Postman collection:** `postman/collections/Arvan.postman_collection.json`
+
+## Health Checks
+- **`GET /healthz`** returns `200 OK` with `{"status":"ok"}` when the application process is running. This is a liveness check: it answers whether the server itself is alive.
+- **`GET /readyz`** returns `200 OK` only when required dependencies are reachable. It currently checks MySQL with `PingContext` and RabbitMQ by opening and closing a lightweight AMQP channel on the existing connection.
+
+Examples:
+```bash
+curl http://localhost:8080/healthz
+curl http://localhost:8080/readyz
+```
+
+These endpoints are useful for Docker Compose health checks and future Kubernetes liveness/readiness probes. Kubernetes manifests are intentionally not included yet; this project currently adds only the application-level endpoints.
 
 ## Message state machine
 - **PENDING**: inserted during `/messages/send` (alongside outbox insert)

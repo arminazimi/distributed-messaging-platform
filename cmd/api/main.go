@@ -5,6 +5,7 @@ import (
 	"gateway/app"
 	"gateway/config"
 	"gateway/internal/balance"
+	"gateway/internal/health"
 	"gateway/internal/message"
 	"gateway/pkg/metrics"
 	"os/signal"
@@ -30,6 +31,9 @@ func main() {
 
 	app.Echo.GET("/balance", balance.GetBalanceAndHistoryHandler)
 	app.Echo.POST("/balance/add", balance.AddBalanceHandler)
+
+	app.Echo.GET("/healthz", health.HealthHandler)
+	app.Echo.GET("/readyz", health.ReadinessHandler)
 
 	app.Echo.GET("/swagger/*", echSwagger.WrapHandler)
 	app.Echo.GET("/metrics", metrics.Handler())
