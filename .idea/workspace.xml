@@ -6,33 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="ec1089bf-d736-41cd-bde2-592108a60ef4" name="Changes" comment="add balance retrieval and transaction history endpoints">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Makefile" beforeDir="false" afterPath="$PROJECT_DIR$/Makefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/app.go" beforeDir="false" afterPath="$PROJECT_DIR$/app/app.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/api/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/api/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/loadtest/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/loadtest/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/config/config.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/db/db.sql" beforeDir="false" afterPath="$PROJECT_DIR$/db/db.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/docs.go" beforeDir="false" afterPath="$PROJECT_DIR$/docs/docs.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/swagger.json" beforeDir="false" afterPath="$PROJECT_DIR$/docs/swagger.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/swagger.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docs/swagger.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/balance/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/balance/service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/balance/service_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/balance/service_test.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/model/model.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/model/model.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/operator/operatorA/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/operator/operatorA/service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/operator/operatorB/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/operator/operatorB/service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/operator/service.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/operator/service.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/sms/consumer.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/sms/handler.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/sms/handler_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/sms/outbox_publisher.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/sms/service.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/sms/service_test.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/postman/collections/Arvan.postman_collection.json" beforeDir="false" afterPath="$PROJECT_DIR$/postman/collections/Arvan.postman_collection.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testutil/app_test_setup.go" beforeDir="false" afterPath="$PROJECT_DIR$/testutil/app_test_setup.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/testutil/setup.go" beforeDir="false" afterPath="$PROJECT_DIR$/testutil/setup.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

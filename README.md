@@ -1,5 +1,7 @@
 # distributed messaging platform – Developer Guide
 
+[![CI](https://github.com/arminazimi/distributed-messaging-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/arminazimi/distributed-messaging-platform/actions/workflows/ci.yml)
+
 ## Overview
 - Full-stack observability: metrics for HTTP/DB/RabbitMQ, structured JSON logs, OpenTelemetry tracing.
 - Robustness: graceful shutdown for server + workers, panic recovery middleware, balance refund on provider failure.
