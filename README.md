@@ -69,6 +69,58 @@ graph LR
 - **`pkg/metrics`**: Echo middleware and Prometheus exposition.
 - **`pkg/tracing`**: OpenTelemetry exporter init and helpers.
 
+## Observability Stack
+The local Docker Compose stack includes Prometheus, Grafana, Jaeger, and OpenTelemetry wiring for production-style visibility.
+
+- **Prometheus** scrapes time-series metrics from the application at `/metrics` and from RabbitMQ at `:15692/metrics`. It stores request rates, latency histograms, Go runtime metrics, database query metrics, worker metrics, and RabbitMQ queue metrics.
+- **Grafana** reads from Prometheus and visualizes the metrics through provisioned dashboards. The datasource and dashboards are loaded automatically from `observability/grafana/`.
+- **OpenTelemetry** instruments request, worker, RabbitMQ, and operator flows with traces. The app exports traces through OTLP.
+- **Jaeger** receives OpenTelemetry traces and provides trace search, span timelines, and request-flow debugging.
+
+How they interact:
+```text
+Application /metrics ──scraped by──> Prometheus ──queried by──> Grafana
+Application traces ──OTLP──> Jaeger
+RabbitMQ metrics ──scraped by──> Prometheus ──queried by──> Grafana
+```
+
+Start the full observability stack:
+```bash
+docker compose up --build
+```
+
+Useful URLs:
+- Grafana: `http://localhost:3000` (`admin` / `admin`)
+- Prometheus: `http://localhost:9090`
+- Jaeger: `http://localhost:16686`
+- RabbitMQ Management: `http://localhost:15672` (`rabbit_user` / `rabbit_pass`)
+- Application metrics: `http://localhost:8080/metrics`
+
+Grafana dashboards are provisioned under the `Distributed Messaging Platform` folder:
+- `Messaging Platform - Application Overview`: HTTP request rate, HTTP latency, error rate, Go runtime metrics, and database query rate.
+- `Messaging Platform - RabbitMQ Overview`: queue depth, publish/delivery rate, connections/channels, and memory usage.
+
+Verify metrics:
+```bash
+curl http://localhost:8080/metrics
+curl http://localhost:9090/-/ready
+curl http://localhost:15692/metrics
+```
+
+Recommended README screenshots:
+- Grafana `Messaging Platform - Application Overview` dashboard after running `make benchmark`.
+- Grafana `Messaging Platform - RabbitMQ Overview` dashboard while messages are being published/consumed.
+- Prometheus **Status > Targets** page showing `messaging-platform-api` and `rabbitmq` as `UP`.
+- Jaeger trace detail page for a `/messages/send` request.
+
+Example Grafana dashboard captures:
+
+![Grafana application overview dashboard](docs/screenshots/grafana-application-overview.png)
+
+![Grafana runtime and database metrics](docs/screenshots/grafana-runtime-database.png)
+
+For final portfolio screenshots, capture Grafana in view mode after clicking **Exit edit** so the dashboard panels are the focus.
+
 ## Performance Benchmark
 This project includes a lightweight benchmark driver in `cmd/loadtest` for measuring the `/messages/send` ingestion path under concurrent HTTP traffic. The benchmark exercises the API layer, balance validation, message request persistence, and transactional outbox enqueue path while the service runs with MySQL and RabbitMQ in Docker Compose.
 
@@ -302,11 +354,11 @@ go run ./cmd/api
 
 ## Docker & Compose
 - `Dockerfile` builds the Go service (see root).
-- `docker-compose.yml` brings up MySQL, RabbitMQ (management UI on :15672), and the app.
+- `docker-compose.yml` brings up MySQL, RabbitMQ, the app, Prometheus, Grafana, and Jaeger.
 ```bash
 docker compose up --build
 ```
-App listens on `:8080` by default; metrics at `/metrics`; swagger at `/swagger/index.html`.
+App listens on `:8080` by default; metrics at `/metrics`; swagger at `/swagger/index.html`; Grafana is available on `:3000`.
 
 ## Capacity knobs
 DB connection pooling can be tuned via env:
@@ -317,8 +369,9 @@ DB connection pooling can be tuned via env:
 
 ## Observability
 - **Logs**: Structured JSON via slog to stdout.
-- **Tracing**: OpenTelemetry exporter configured by env; spans include user_id where available.
-- **Metrics**: `GET /metrics` Prometheus endpoint; DB ops and HTTP middleware instrumented.
+- **Metrics**: Prometheus scrapes application and RabbitMQ metrics.
+- **Dashboards**: Grafana dashboards are provisioned from `observability/grafana/`.
+- **Tracing**: OpenTelemetry exporter sends traces to Jaeger; spans include user_id where available.
 
 ## Error handling
 - Echo recover middleware guards panics.

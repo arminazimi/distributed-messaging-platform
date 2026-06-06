@@ -1,7 +1,8 @@
 package metrics
 
 import (
-	"net/http"
+	"errors"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 	prom "github.com/prometheus/client_golang/prometheus"
@@ -39,10 +40,24 @@ func EchoMiddleware() echo.MiddlewareFunc {
 			err := next(c)
 			timer.ObserveDuration()
 			status := c.Response().Status
-			httpRequests.WithLabelValues(path, method, http.StatusText(status)).Inc()
+			if err != nil {
+				status = statusFromError(err)
+			}
+			if status == 0 {
+				status = 200
+			}
+			httpRequests.WithLabelValues(path, method, strconv.Itoa(status)).Inc()
 			return err
 		}
 	}
+}
+
+func statusFromError(err error) int {
+	var httpErr *echo.HTTPError
+	if errors.As(err, &httpErr) {
+		return httpErr.Code
+	}
+	return 500
 }
 
 func Handler() echo.HandlerFunc {
