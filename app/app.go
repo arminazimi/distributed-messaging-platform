@@ -6,6 +6,7 @@ import (
 	"gateway/pkg/db"
 	"gateway/pkg/metrics"
 	amqp "gateway/pkg/queue"
+	"gateway/pkg/ratelimit"
 	"gateway/pkg/tracing"
 	"log/slog"
 	"os"
@@ -92,6 +93,12 @@ func initEcho() {
 	Echo = echo.New()
 	Echo.HideBanner = true
 	Echo.HidePort = true
+	ratelimit.Configure(
+		config.GlobalRateLimitRPS,
+		config.GlobalRateLimitBurst,
+		config.UserRateLimitRPS,
+		config.UserRateLimitBurst,
+	)
 	Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			ctx, span := tracing.Start(c.Request().Context(), "http.request",
@@ -104,6 +111,7 @@ func initEcho() {
 		}
 	})
 	Echo.Use(metrics.EchoMiddleware())
+	Echo.Use(ratelimit.GlobalMiddleware())
 	Echo.Use(middleware.Recover())
 }
 

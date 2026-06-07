@@ -360,6 +360,63 @@ docker compose up --build
 ```
 App listens on `:8080` by default; metrics at `/metrics`; swagger at `/swagger/index.html`; Grafana is available on `:3000`.
 
+## Rate Limiting
+Rate limiting protects the platform from traffic spikes, abusive clients, accidental retry storms, and workloads that could overwhelm MySQL, RabbitMQ, or the transactional outbox. This is important for high-throughput distributed systems because one noisy caller should not consume all shared capacity.
+
+The API uses two layers of rate limiting:
+
+- **Global limit**: an Echo middleware limits total incoming requests per second across all routes in the process.
+- **Per-user limit**: `POST /messages/send` limits requests by `customer_id` after decoding the JSON body.
+
+The per-user limiter is implemented inside the send handler instead of middleware because middleware would need to read and then restore the request body before the handler can decode it. Keeping the check after JSON decoding is simpler, safer, and easier to test.
+
+When a request is rejected, the API returns:
+
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests. Please retry later."
+}
+```
+
+The HTTP status code is `429 Too Many Requests`.
+
+Environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `GLOBAL_RATE_LIMIT_RPS` | `1000` | Total requests per second allowed per API process. Set to `0` to disable. |
+| `GLOBAL_RATE_LIMIT_BURST` | `1000` | Short burst capacity for the global limiter. |
+| `USER_RATE_LIMIT_RPS` | `20` | Requests per second allowed per `customer_id` on `POST /messages/send`. Set to `0` to disable. |
+| `USER_RATE_LIMIT_BURST` | `20` | Short burst capacity for each user limiter. |
+
+Prometheus exposes rate-limit rejections through:
+
+```text
+rate_limited_requests_total{scope="global"}
+rate_limited_requests_total{scope="user"}
+```
+
+Test locally with a low limit:
+
+```bash
+GLOBAL_RATE_LIMIT_RPS=2 GLOBAL_RATE_LIMIT_BURST=2 USER_RATE_LIMIT_RPS=1 USER_RATE_LIMIT_BURST=1 docker compose up --build
+```
+
+Then send repeated requests quickly:
+
+```bash
+curl -i -X POST http://localhost:8080/messages/send \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_id":1,"text":"hi","recipients":["09128582812"],"type":"normal"}'
+```
+
+After the limit is exceeded, you should see `429 Too Many Requests`. You can also verify the metric:
+
+```bash
+curl http://localhost:8080/metrics | grep rate_limited_requests_total
+```
+
 ## Kubernetes Deployment
 Kubernetes manifests are provided under `deploy/k8s/` as a simple production-oriented baseline without Helm. The setup runs the API as scalable pods, MySQL and RabbitMQ as single-replica StatefulSets with persistent volumes, and uses the existing `/healthz` and `/readyz` endpoints for pod health management.
 
@@ -406,6 +463,8 @@ The Kubernetes manifests reuse the same runtime variables as Docker Compose:
 | `RABBIT_URI` | Secret | RabbitMQ AMQP connection string. |
 | `RABBIT_MESSAGE_EXCHANGE`, `EXPRESS_QUEUE`, `NORMAL_QUEUE` | ConfigMap | RabbitMQ exchange and queue names. |
 | `DB_MAX_OPEN_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME_SEC` | ConfigMap | Database pool tuning for high-throughput workloads. |
+| `GLOBAL_RATE_LIMIT_RPS`, `GLOBAL_RATE_LIMIT_BURST` | ConfigMap | Total API process rate limit and burst capacity. |
+| `USER_RATE_LIMIT_RPS`, `USER_RATE_LIMIT_BURST` | ConfigMap | Per-user send request rate limit and burst capacity. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_INSECURE` | ConfigMap | OpenTelemetry exporter configuration. |
 
 ### Apply locally

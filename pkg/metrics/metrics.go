@@ -25,10 +25,21 @@ var (
 		},
 		[]string{"path", "method"},
 	)
+	rateLimitedRequests = prom.NewCounterVec(
+		prom.CounterOpts{
+			Name: "rate_limited_requests_total",
+			Help: "Total requests rejected by rate limiting",
+		},
+		[]string{"scope"},
+	)
 )
 
 func init() {
-	prom.MustRegister(httpRequests, httpDuration)
+	prom.MustRegister(httpRequests, httpDuration, rateLimitedRequests)
+}
+
+func RecordRateLimited(scope string) {
+	rateLimitedRequests.WithLabelValues(scope).Inc()
 }
 
 func EchoMiddleware() echo.MiddlewareFunc {

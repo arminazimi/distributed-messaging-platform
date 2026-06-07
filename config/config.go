@@ -23,6 +23,12 @@ var (
 	DBMaxOpenConns       int
 	DBMaxIdleConns       int
 	DBConnMaxLifetimeSec int
+
+	// Rate limiting knobs
+	GlobalRateLimitRPS   int
+	GlobalRateLimitBurst int
+	UserRateLimitRPS     int
+	UserRateLimitBurst   int
 )
 
 func Init() {
@@ -45,4 +51,9 @@ func Init() {
 	DBMaxOpenConns = env.DefaultInt("DB_MAX_OPEN_CONNS", 50)
 	DBMaxIdleConns = env.DefaultInt("DB_MAX_IDLE_CONNS", 25)
 	DBConnMaxLifetimeSec = env.DefaultInt("DB_CONN_MAX_LIFETIME_SEC", 300)
+
+	GlobalRateLimitRPS = env.DefaultInt("GLOBAL_RATE_LIMIT_RPS", 1000)
+	GlobalRateLimitBurst = env.DefaultInt("GLOBAL_RATE_LIMIT_BURST", 1000)
+	UserRateLimitRPS = env.DefaultInt("USER_RATE_LIMIT_RPS", 20)
+	UserRateLimitBurst = env.DefaultInt("USER_RATE_LIMIT_BURST", 20)
 }

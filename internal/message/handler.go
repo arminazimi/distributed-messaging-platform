@@ -9,8 +9,10 @@ import (
 	"gateway/internal/balance"
 	"gateway/internal/model"
 	"gateway/internal/outbox"
+	"gateway/pkg/ratelimit"
 	"gateway/pkg/tracing"
 	"net/http"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -37,6 +39,10 @@ func SendHandler(c echo.Context) error {
 
 	ctxWithUser := tracing.WithUser(c.Request().Context(), fmt.Sprint(s.CustomerID))
 	c.SetRequest(c.Request().WithContext(ctxWithUser))
+
+	if s.CustomerID > 0 && !ratelimit.AllowUser(strconv.FormatInt(s.CustomerID, 10)) {
+		return ratelimit.Respond(c, ratelimit.ScopeUser)
+	}
 
 	if len(s.Recipients) == 0 {
 		app.Logger.Error("zero recipients")

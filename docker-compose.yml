@@ -61,6 +61,10 @@ services:
       NORMAL_QUEUE: message_normal
       OTEL_EXPORTER_OTLP_ENDPOINT: localhost:4317
       OTEL_EXPORTER_OTLP_INSECURE: true
+      GLOBAL_RATE_LIMIT_RPS: 1000
+      GLOBAL_RATE_LIMIT_BURST: 1000
+      USER_RATE_LIMIT_RPS: 20
+      USER_RATE_LIMIT_BURST: 20
     ports:
       - "8080:8080"
 

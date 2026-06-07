@@ -16,6 +16,7 @@ import (
 	"gateway/config"
 	"gateway/internal/model"
 	amqp "gateway/pkg/queue"
+	"gateway/pkg/ratelimit"
 
 	"github.com/labstack/echo/v4"
 )
@@ -66,6 +67,7 @@ func TestSendHandler_InvalidJSON(t *testing.T) {
 
 func TestSendHandler_ZeroRecipients(t *testing.T) {
 	initTestLogger()
+	ratelimit.Configure(1000, 1000, 1000, 1000)
 	e := echo.New()
 	body := `{"customer_id":1,"recipients":[],"type":"normal"}`
 	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
@@ -78,6 +80,36 @@ func TestSendHandler_ZeroRecipients(t *testing.T) {
 	}
 	if he, ok := err.(*echo.HTTPError); !ok || he.Code != http.StatusBadRequest {
 		t.Fatalf("expected 400, got %v", err)
+	}
+}
+
+func TestSendHandler_UserRateLimitExceeded(t *testing.T) {
+	initTestLogger()
+	ratelimit.Configure(1000, 1000, 1, 1)
+	t.Cleanup(func() {
+		ratelimit.Configure(1000, 1000, 1000, 1000)
+	})
+
+	e := echo.New()
+	body := `{"customer_id":42,"recipients":[],"type":"normal"}`
+
+	firstReq := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
+	firstRec := httptest.NewRecorder()
+	firstCtx := e.NewContext(firstReq, firstRec)
+	if err := SendHandler(firstCtx); err == nil {
+		t.Fatalf("expected first request to continue past rate limiting and fail validation")
+	} else if he, ok := err.(*echo.HTTPError); !ok || he.Code != http.StatusBadRequest {
+		t.Fatalf("expected first request to fail validation with 400, got %v", err)
+	}
+
+	secondReq := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
+	secondRec := httptest.NewRecorder()
+	secondCtx := e.NewContext(secondReq, secondRec)
+	if err := SendHandler(secondCtx); err != nil {
+		t.Fatalf("expected rate-limited response to be written directly, got %v", err)
+	}
+	if secondRec.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429, got %d", secondRec.Code)
 	}
 }
 
