@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  namespace: distributed-messaging-platform
+  labels:
+    app.kubernetes.io/name: distributed-messaging-platform
+    app.kubernetes.io/component: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: distributed-messaging-platform
+      app.kubernetes.io/component: rabbitmq
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: distributed-messaging-platform
+        app.kubernetes.io/component: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:3.13-management
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - rabbitmq-plugins enable --offline rabbitmq_prometheus && rabbitmq-server
+          ports:
+            - name: amqp
+              containerPort: 5672
+            - name: management
+              containerPort: 15672
+            - name: metrics
+              containerPort: 15692
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: messaging-platform-config
+                  key: RABBITMQ_DEFAULT_USER
+            - name: RABBITMQ_DEFAULT_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-platform-secret
+                  key: RABBITMQ_DEFAULT_PASS
+          volumeMounts:
+            - name: rabbitmq-data
+              mountPath: /var/lib/rabbitmq
+          readinessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - ping
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command:
+                - rabbitmq-diagnostics
+                - -q
+                - status
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: rabbitmq-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+

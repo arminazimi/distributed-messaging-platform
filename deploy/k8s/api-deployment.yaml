@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messaging-platform-api
+  namespace: distributed-messaging-platform
+  labels:
+    app.kubernetes.io/name: distributed-messaging-platform
+    app.kubernetes.io/component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: distributed-messaging-platform
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: distributed-messaging-platform
+        app.kubernetes.io/component: api
+    spec:
+      containers:
+        - name: api
+          image: distributed-messaging-platform:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: messaging-platform-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-platform-secret
+                  key: DB_PASSWORD
+            - name: RABBIT_URI
+              valueFrom:
+                secretKeyRef:
+                  name: messaging-platform-secret
+                  key: RABBIT_URI
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+

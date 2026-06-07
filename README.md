@@ -210,7 +210,7 @@ curl http://localhost:8080/healthz
 curl http://localhost:8080/readyz
 ```
 
-These endpoints are useful for Docker Compose health checks and future Kubernetes liveness/readiness probes. Kubernetes manifests are intentionally not included yet; this project currently adds only the application-level endpoints.
+These endpoints are useful for Docker Compose health checks and Kubernetes liveness/readiness probes.
 
 ## Message state machine
 - **PENDING**: inserted during `/messages/send` (alongside outbox insert)
@@ -359,6 +359,118 @@ go run ./cmd/api
 docker compose up --build
 ```
 App listens on `:8080` by default; metrics at `/metrics`; swagger at `/swagger/index.html`; Grafana is available on `:3000`.
+
+## Kubernetes Deployment
+Kubernetes manifests are provided under `deploy/k8s/` as a simple production-oriented baseline without Helm. The setup runs the API as scalable pods, MySQL and RabbitMQ as single-replica StatefulSets with persistent volumes, and uses the existing `/healthz` and `/readyz` endpoints for pod health management.
+
+```mermaid
+flowchart TB
+  Client[Client]
+  Service[Kubernetes Service: messaging-platform-api]
+  subgraph API[API Pods]
+    Pod1[API Pod]
+    Pod2[API Pod]
+  end
+  Rabbit[RabbitMQ StatefulSet]
+  Workers[Workers inside API Pods]
+  MySQL[(MySQL StatefulSet)]
+
+  Client --> Service
+  Service --> Pod1
+  Service --> Pod2
+  Pod1 --> Rabbit
+  Pod2 --> Rabbit
+  Rabbit --> Workers
+  Workers --> MySQL
+  Pod1 --> MySQL
+  Pod2 --> MySQL
+```
+
+### Kubernetes concepts used
+- **Deployment** manages stateless API pods and keeps the requested number of replicas running.
+- **Service** gives pods a stable DNS name and virtual IP. The API connects to MySQL with `mysql:3306` and RabbitMQ with `rabbitmq:5672`.
+- **ConfigMap** stores non-sensitive configuration such as database host, queue names, exchange name, and connection pool settings.
+- **Secret** stores sensitive values such as database passwords and the RabbitMQ connection URI. Commit only the template, not real production secrets.
+- **Liveness Probe** calls `/healthz` to confirm the process is alive. If it fails repeatedly, Kubernetes restarts the container.
+- **Readiness Probe** calls `/readyz` to confirm MySQL and RabbitMQ are reachable. If it fails, Kubernetes stops routing traffic to that pod until dependencies recover.
+- **StatefulSet** manages stateful services that need stable storage and stable network identity, which fits MySQL and RabbitMQ better than a plain Deployment.
+
+### Environment variables
+The Kubernetes manifests reuse the same runtime variables as Docker Compose:
+
+| Variable | Source | Purpose |
+| --- | --- | --- |
+| `LISTEN_ADDR` | ConfigMap | API bind address, set to `:8080`. |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER_NAME` | ConfigMap | MySQL service discovery and database identity. |
+| `DB_PASSWORD` | Secret | MySQL application user password. |
+| `RABBIT_URI` | Secret | RabbitMQ AMQP connection string. |
+| `RABBIT_MESSAGE_EXCHANGE`, `EXPRESS_QUEUE`, `NORMAL_QUEUE` | ConfigMap | RabbitMQ exchange and queue names. |
+| `DB_MAX_OPEN_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME_SEC` | ConfigMap | Database pool tuning for high-throughput workloads. |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_INSECURE` | ConfigMap | OpenTelemetry exporter configuration. |
+
+### Apply locally
+Build the image that the API Deployment references:
+
+```bash
+docker build -t distributed-messaging-platform:latest .
+```
+
+If you use `kind`, load the image into the local cluster:
+
+```bash
+kind load docker-image distributed-messaging-platform:latest
+```
+
+If you use Minikube, build the image inside Minikube's Docker environment or load it:
+
+```bash
+minikube image load distributed-messaging-platform:latest
+```
+
+Create a local Secret from the template, then apply the manifests:
+
+```bash
+cp deploy/k8s/secret.template.yaml /tmp/messaging-platform-secret.yaml
+kubectl apply -f deploy/k8s/namespace.yaml
+kubectl apply -f /tmp/messaging-platform-secret.yaml
+kubectl apply -f deploy/k8s/configmap.yaml
+kubectl apply -f deploy/k8s/mysql-service.yaml
+kubectl apply -f deploy/k8s/mysql-statefulset.yaml
+kubectl apply -f deploy/k8s/rabbitmq-service.yaml
+kubectl apply -f deploy/k8s/rabbitmq-statefulset.yaml
+kubectl apply -f deploy/k8s/api-service.yaml
+kubectl apply -f deploy/k8s/api-deployment.yaml
+```
+
+Check rollout status:
+
+```bash
+kubectl get pods -n distributed-messaging-platform
+kubectl get svc -n distributed-messaging-platform
+kubectl rollout status deployment/messaging-platform-api -n distributed-messaging-platform
+```
+
+Access the API from your machine:
+
+```bash
+kubectl port-forward svc/messaging-platform-api 8080:8080 -n distributed-messaging-platform
+curl http://localhost:8080/healthz
+curl http://localhost:8080/readyz
+```
+
+For RabbitMQ Management UI:
+
+```bash
+kubectl port-forward svc/rabbitmq 15672:15672 -n distributed-messaging-platform
+```
+
+Then open `http://localhost:15672` and log in with the credentials from your local Secret.
+
+Suggested README screenshots:
+- `kubectl get pods -n distributed-messaging-platform` showing API, MySQL, and RabbitMQ pods running.
+- `kubectl rollout status deployment/messaging-platform-api -n distributed-messaging-platform`.
+- Successful `curl http://localhost:8080/healthz` and `curl http://localhost:8080/readyz` responses through port-forwarding.
+- RabbitMQ Management UI showing the provisioned queues.
 
 ## Capacity knobs
 DB connection pooling can be tuned via env:

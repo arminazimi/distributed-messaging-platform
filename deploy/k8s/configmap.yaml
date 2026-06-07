@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: messaging-platform-config
+  namespace: distributed-messaging-platform
+  labels:
+    app.kubernetes.io/name: distributed-messaging-platform
+data:
+  APP_NAME: distributed-messaging-platform
+  LISTEN_ADDR: ":8080"
+
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  DB_NAME: messaging_platform
+  DB_USER_NAME: message_user
+  DB_MAX_OPEN_CONNS: "50"
+  DB_MAX_IDLE_CONNS: "25"
+  DB_CONN_MAX_LIFETIME_SEC: "300"
+
+  MYSQL_DATABASE: messaging_platform
+  MYSQL_USER: message_user
+
+  RABBITMQ_DEFAULT_USER: rabbit_user
+  RABBIT_MESSAGE_EXCHANGE: message_exchange
+  EXPRESS_QUEUE: message_express
+  NORMAL_QUEUE: message_normal
+
+  OTEL_EXPORTER_OTLP_ENDPOINT: jaeger:4317
+  OTEL_EXPORTER_OTLP_INSECURE: "true"
+
