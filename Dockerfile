@@ -2,20 +2,13 @@
 
 # --- Build stage ---
 FROM golang:1.26-bookworm AS builder
-ARG GOPROXY=https://go.devneeds.ir,direct
-ARG GOSUMDB=off
-ENV GOPROXY=$GOPROXY
-ENV GOSUMDB=$GOSUMDB
+ENV GOFLAGS=-mod=vendor
 WORKDIR /src
 
-# Enable Go modules and download deps first for better caching
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy the rest of the source
+# Copy source including the checked-in vendor directory.
 COPY . .
 
-# Build the API binary
+# Build the API binary using vendored dependencies only.
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/gateway ./cmd/api
 
 # --- Runtime stage ---

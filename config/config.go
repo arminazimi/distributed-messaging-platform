@@ -29,6 +29,10 @@ var (
 	GlobalRateLimitBurst int
 	UserRateLimitRPS     int
 	UserRateLimitBurst   int
+
+	// Backpressure knobs
+	BackpressureEnabled                bool
+	BackpressureOutboxPendingThreshold int
 )
 
 func Init() {
@@ -56,4 +60,7 @@ func Init() {
 	GlobalRateLimitBurst = env.DefaultInt("GLOBAL_RATE_LIMIT_BURST", 1000)
 	UserRateLimitRPS = env.DefaultInt("USER_RATE_LIMIT_RPS", 20)
 	UserRateLimitBurst = env.DefaultInt("USER_RATE_LIMIT_BURST", 20)
+
+	BackpressureEnabled = env.DefaultBool("BACKPRESSURE_ENABLED", true)
+	BackpressureOutboxPendingThreshold = env.DefaultInt("BACKPRESSURE_OUTBOX_PENDING_THRESHOLD", 10000)
 }

@@ -417,6 +417,74 @@ After the limit is exceeded, you should see `429 Too Many Requests`. You can als
 curl http://localhost:8080/metrics | grep rate_limited_requests_total
 ```
 
+## Adaptive Backpressure
+Backpressure protects the system when internal processing cannot keep up with incoming traffic. Instead of accepting unlimited new work and allowing queues, database load, or latency to grow without bound, the API temporarily rejects new requests so downstream components can recover.
+
+This matters in distributed systems because a healthy HTTP layer can still overload slower internal dependencies. In this project, `/messages/send` accepts work quickly, stores it in the transactional outbox, and later publishes it to RabbitMQ. If the outbox backlog grows too large, accepting more send requests makes recovery harder.
+
+Current pressure signal:
+
+- **Pending transactional outbox events**: before accepting a valid `POST /messages/send` request, the API counts pending `message.send` rows in `outbox_events`.
+- If the count is greater than `BACKPRESSURE_OUTBOX_PENDING_THRESHOLD`, the API returns `503 Service Unavailable`.
+- The check runs after JSON validation and per-user rate limiting, but before balance charging or inserting new outbox events.
+
+Example `503` response:
+
+```json
+{
+  "error": "system_overloaded",
+  "message": "The system is temporarily overloaded. Please retry later."
+}
+```
+
+Environment variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `BACKPRESSURE_ENABLED` | `true` | Enables or disables outbox-based backpressure. |
+| `BACKPRESSURE_OUTBOX_PENDING_THRESHOLD` | `10000` | Maximum pending `message.send` outbox events allowed before rejecting new send requests. |
+
+Prometheus metrics:
+
+```text
+backpressure_rejections_total
+current_outbox_pending_events
+```
+
+Test locally with a low threshold:
+
+```bash
+BACKPRESSURE_ENABLED=true BACKPRESSURE_OUTBOX_PENDING_THRESHOLD=0 docker compose up --build
+```
+
+In another terminal, insert one controlled pending outbox row:
+
+```bash
+docker exec -i messaging_platform_mysql mysql -umessage_user -pmessage_pass messaging_platform \
+  -e "INSERT INTO outbox_events (aggregate_type, aggregate_id, event_type, payload, priority, status) VALUES ('message', CONCAT('manual-backpressure-', UNIX_TIMESTAMP()), 'message.send', JSON_OBJECT(), 0, 'pending');"
+```
+
+Then send a request:
+
+```bash
+curl -i -X POST http://localhost:8080/messages/send \
+  -H 'Content-Type: application/json' \
+  -d '{"customer_id":1,"text":"hi","recipients":["09128582812"],"type":"normal"}'
+```
+
+When the pending outbox count is above the threshold, the response should be `503 Service Unavailable`. Verify metrics:
+
+```bash
+curl http://localhost:8080/metrics | grep -E 'backpressure_rejections_total|current_outbox_pending_events'
+```
+
+Future improvements:
+
+- RabbitMQ queue-depth based backpressure using queue metrics or management API.
+- Latency-based backpressure using recent database, RabbitMQ, or handler latency.
+- Adaptive thresholds that change based on observed drain rate and error rate.
+- Custom autoscaling metrics for Kubernetes HPA or KEDA.
+
 ## Kubernetes Deployment
 Kubernetes manifests are provided under `deploy/k8s/` as a simple production-oriented baseline without Helm. The setup runs the API as scalable pods, MySQL and RabbitMQ as single-replica StatefulSets with persistent volumes, and uses the existing `/healthz` and `/readyz` endpoints for pod health management.
 
@@ -465,6 +533,7 @@ The Kubernetes manifests reuse the same runtime variables as Docker Compose:
 | `DB_MAX_OPEN_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME_SEC` | ConfigMap | Database pool tuning for high-throughput workloads. |
 | `GLOBAL_RATE_LIMIT_RPS`, `GLOBAL_RATE_LIMIT_BURST` | ConfigMap | Total API process rate limit and burst capacity. |
 | `USER_RATE_LIMIT_RPS`, `USER_RATE_LIMIT_BURST` | ConfigMap | Per-user send request rate limit and burst capacity. |
+| `BACKPRESSURE_ENABLED`, `BACKPRESSURE_OUTBOX_PENDING_THRESHOLD` | ConfigMap | Enables outbox backlog protection and controls the rejection threshold. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_INSECURE` | ConfigMap | OpenTelemetry exporter configuration. |
 
 ### Apply locally

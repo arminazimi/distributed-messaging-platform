@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gateway/app"
 	"gateway/config"
+	"gateway/internal/backpressure"
 	"gateway/internal/balance"
 	"gateway/internal/model"
 	"gateway/internal/outbox"
@@ -47,6 +48,21 @@ func SendHandler(c echo.Context) error {
 	if len(s.Recipients) == 0 {
 		app.Logger.Error("zero recipients")
 		return echo.NewHTTPError(http.StatusBadRequest, "zero recipients")
+	}
+
+	pressure, err := backpressure.Check(
+		c.Request().Context(),
+		app.DB,
+		config.BackpressureEnabled,
+		config.BackpressureOutboxPendingThreshold,
+	)
+	if err != nil {
+		app.Logger.Error("backpressure check", "err", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal error")
+	}
+	if pressure.Active {
+		app.Logger.Warn("backpressure active", "outbox_pending", pressure.PendingCount, "threshold", config.BackpressureOutboxPendingThreshold)
+		return backpressure.Respond(c)
 	}
 
 	s.MessageIdentifier = uuid.NewString()

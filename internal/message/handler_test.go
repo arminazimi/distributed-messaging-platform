@@ -113,6 +113,83 @@ func TestSendHandler_UserRateLimitExceeded(t *testing.T) {
 	}
 }
 
+func TestSendHandler_BackpressurePassesUnderThreshold(t *testing.T) {
+	initTestLogger()
+	cleanup := startApp(t)
+	t.Cleanup(cleanup)
+	restore := configureBackpressureForTest(true, 10)
+	t.Cleanup(restore)
+	ratelimit.Configure(1000, 1000, 1000, 1000)
+
+	resetOutbox(t)
+	insertPendingOutboxEvents(t, 9)
+
+	e := echo.New()
+	body := `{"customer_id":99,"recipients":["+1"],"type":"normal"}`
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	err := SendHandler(ctx)
+	if err == nil {
+		t.Fatalf("expected request to continue past backpressure and fail later because balance is missing")
+	}
+	if he, ok := err.(*echo.HTTPError); !ok || he.Code == http.StatusServiceUnavailable {
+		t.Fatalf("expected non-503 response under threshold, got %v", err)
+	}
+}
+
+func TestSendHandler_BackpressureRejectsOverThreshold(t *testing.T) {
+	initTestLogger()
+	cleanup := startApp(t)
+	t.Cleanup(cleanup)
+	restore := configureBackpressureForTest(true, 2)
+	t.Cleanup(restore)
+	ratelimit.Configure(1000, 1000, 1000, 1000)
+
+	resetOutbox(t)
+	insertPendingOutboxEvents(t, 3)
+
+	e := echo.New()
+	body := `{"customer_id":100,"recipients":["+1"],"type":"normal"}`
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	if err := SendHandler(ctx); err != nil {
+		t.Fatalf("expected backpressure response to be written directly, got %v", err)
+	}
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected 503, got %d", rec.Code)
+	}
+}
+
+func TestSendHandler_BackpressureDisabledAllowsRequests(t *testing.T) {
+	initTestLogger()
+	cleanup := startApp(t)
+	t.Cleanup(cleanup)
+	restore := configureBackpressureForTest(false, 1)
+	t.Cleanup(restore)
+	ratelimit.Configure(1000, 1000, 1000, 1000)
+
+	resetOutbox(t)
+	insertPendingOutboxEvents(t, 5)
+
+	e := echo.New()
+	body := `{"customer_id":101,"recipients":["+1"],"type":"normal"}`
+	req := httptest.NewRequest(http.MethodPost, "/messages/send", bytes.NewBufferString(body))
+	rec := httptest.NewRecorder()
+	ctx := e.NewContext(req, rec)
+
+	err := SendHandler(ctx)
+	if err == nil {
+		t.Fatalf("expected request to continue past disabled backpressure and fail later because balance is missing")
+	}
+	if he, ok := err.(*echo.HTTPError); !ok || he.Code == http.StatusServiceUnavailable {
+		t.Fatalf("expected non-503 response when backpressure is disabled, got %v", err)
+	}
+}
+
 func TestHistoryHandler_MissingUserID(t *testing.T) {
 	initTestLogger()
 	e := echo.New()
@@ -305,5 +382,40 @@ func TestGetQueue(t *testing.T) {
 	}
 	if q := getQueue(model.Type("unknown")); q != config.NormalQueue {
 		t.Fatalf("unexpected queue for default: %s", q)
+	}
+}
+
+func configureBackpressureForTest(enabled bool, threshold int) func() {
+	oldEnabled := config.BackpressureEnabled
+	oldThreshold := config.BackpressureOutboxPendingThreshold
+	config.BackpressureEnabled = enabled
+	config.BackpressureOutboxPendingThreshold = threshold
+	return func() {
+		config.BackpressureEnabled = oldEnabled
+		config.BackpressureOutboxPendingThreshold = oldThreshold
+	}
+}
+
+func resetOutbox(t *testing.T) {
+	t.Helper()
+	if _, err := app.DB.ExecContext(context.Background(), "DELETE FROM outbox_events"); err != nil {
+		t.Fatalf("reset outbox: %v", err)
+	}
+}
+
+func insertPendingOutboxEvents(t *testing.T, count int) {
+	t.Helper()
+	for i := 0; i < count; i++ {
+		_, err := app.DB.ExecContext(
+			context.Background(),
+			`INSERT INTO outbox_events (aggregate_type, aggregate_id, event_type, payload, priority, status)
+			 VALUES (?, ?, 'message.send', CAST(? AS JSON), 0, 'pending')`,
+			"message",
+			fmt.Sprintf("test-pending-%d", i),
+			`{}`,
+		)
+		if err != nil {
+			t.Fatalf("insert pending outbox event: %v", err)
+		}
 	}
 }

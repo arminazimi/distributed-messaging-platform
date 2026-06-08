@@ -32,14 +32,34 @@ var (
 		},
 		[]string{"scope"},
 	)
+	backpressureRejections = prom.NewCounter(
+		prom.CounterOpts{
+			Name: "backpressure_rejections_total",
+			Help: "Total requests rejected because internal pressure exceeded the configured threshold",
+		},
+	)
+	currentOutboxPendingEvents = prom.NewGauge(
+		prom.GaugeOpts{
+			Name: "current_outbox_pending_events",
+			Help: "Current number of pending message.send events in the transactional outbox",
+		},
+	)
 )
 
 func init() {
-	prom.MustRegister(httpRequests, httpDuration, rateLimitedRequests)
+	prom.MustRegister(httpRequests, httpDuration, rateLimitedRequests, backpressureRejections, currentOutboxPendingEvents)
 }
 
 func RecordRateLimited(scope string) {
 	rateLimitedRequests.WithLabelValues(scope).Inc()
+}
+
+func RecordBackpressureRejection() {
+	backpressureRejections.Inc()
+}
+
+func SetOutboxPendingEvents(count int64) {
+	currentOutboxPendingEvents.Set(float64(count))
 }
 
 func EchoMiddleware() echo.MiddlewareFunc {

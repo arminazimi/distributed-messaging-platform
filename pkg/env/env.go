@@ -51,6 +51,18 @@ func DefaultInt(key string, def int) int {
 	return i
 }
 
+func DefaultBool(key string, def bool) bool {
+	v := getEnv(key)
+	if v == "" {
+		return def
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return def
+	}
+	return b
+}
+
 func RequiredNotEmpty(key string) string {
 	value := getEnv(key)
 	if value == "" {
